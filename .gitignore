@@ -1,0 +1,27 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Test / cache
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local HuggingFace cache, if redirected into the repo
+.hf_cache/
+
+# Secrets for local docker compose runs (HF_TOKEN, MCP_AUTH_TOKEN, ...)
+.env
+

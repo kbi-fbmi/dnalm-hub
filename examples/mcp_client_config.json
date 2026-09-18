@@ -1,0 +1,13 @@
+{
+  "_comment": "Generic MCP client config (Claude Desktop, Claude Code, Cursor, Cline, ...). Merge the 'ntv3' entry into that client's mcpServers config. Adjust the command if you installed the package differently.",
+  "mcpServers": {
+    "ntv3": {
+      "command": "uvx",
+      "args": ["--from", "ntv3-mcp", "ntv3-mcp"],
+      "env": {
+        "NTV3_DEVICE": "cpu",
+        "NTV3_DTYPE": "float32"
+      }
+    }
+  }
+}

@@ -1,0 +1,58 @@
+[project]
+name = "ntv3-mcp"
+version = "0.1.0"
+description = "MCP server exposing InstaDeep's Nucleotide Transformer v3 (NTv3) genomic language models: DNA embeddings, zero-shot variant scoring, and masked-nucleotide prediction."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Radim Krupička" }]
+keywords = [
+    "mcp",
+    "model-context-protocol",
+    "genomics",
+    "bioinformatics",
+    "nucleotide-transformer",
+    "dna",
+    "instadeep",
+]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "mcp[cli]>=2.0.0",
+    "transformers>=4.55.0",
+    "torch>=2.2",
+    "numpy>=1.26",
+]
+
+[project.urls]
+Homepage = "https://github.com/<your-username>/ntv3-mcp"
+Repository = "https://github.com/<your-username>/ntv3-mcp"
+
+[project.scripts]
+ntv3-mcp = "ntv3_mcp.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ntv3_mcp"]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+# On Linux (i.e. inside the Docker image), pull the CPU-only PyTorch build instead
+# of the default PyPI wheel, which drags in several GB of CUDA runtime packages
+# even when NTV3_DEVICE=cpu. Does not affect Windows/macOS dev environments. GPU
+# deployments should override this (see Dockerfile.gpu / README "Deploying with
+# Docker").
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
