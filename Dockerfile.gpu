@@ -15,7 +15,7 @@
 #           -e MCP_AUTH_TOKEN=change-me \
 #           -v ntv3-hf-cache:/home/appuser/.cache/huggingface ntv3-mcp:gpu
 
-FROM nvidia/cuda:12.4.1-runtime-ubuntu24.04
+FROM nvidia/cuda:12.5.1-runtime-ubuntu24.04
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3.12 python3.12-venv python3-pip ca-certificates curl \
@@ -40,7 +40,12 @@ COPY src ./src
 COPY main.py README.md LICENSE ./
 RUN uv sync --no-dev --no-sources-package torch
 
-RUN useradd --create-home --uid 1000 --shell /usr/sbin/nologin appuser
+RUN if getent passwd 1000 >/dev/null; then \
+        existing_user="$(getent passwd 1000 | cut -d: -f1)"; \
+        usermod --login appuser --home /home/appuser --move-home "$existing_user"; \
+    else \
+        useradd --create-home --uid 1000 --shell /usr/sbin/nologin appuser; \
+    fi
 
 ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONUNBUFFERED=1 \
@@ -52,7 +57,7 @@ ENV PATH="/app/.venv/bin:${PATH}" \
     NTV3_DEVICE=cuda \
     NTV3_DTYPE=bfloat16
 
-RUN mkdir -p "$HF_HOME" && chown -R appuser:appuser /app /home/appuser
+RUN mkdir -p "$HF_HOME" && chown -R appuser:$(id -g appuser) /home/appuser
 USER appuser
 
 EXPOSE 8000
