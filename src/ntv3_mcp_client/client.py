@@ -5,12 +5,17 @@ used in small scripts and tests without adding a requests/httpx dependency.
 
 Example:
     >>> from ntv3_mcp_client import Ntv3McpClient
-    >>> client = Ntv3McpClient("http://kbi-cs2.fbmi.cvut.cz:8000", auth_token="your-token")
-    >>> client.health()
+    >>> with Ntv3McpClient("http://kbi-cs2.fbmi.cvut.cz:8000", auth_token="your-token") as client:
+    ...     client.health()
+    ...     result = client.embed_sequence("ACGTACGTACGT", checkpoint="100m-pre")
+    ...     sorted(result.keys())
     'ok'
-    >>> result = client.embed_sequence("ACGTACGTACGT", checkpoint="100m-pre")
-    >>> sorted(result.keys())
     ['checkpoint', 'embedding', 'layer_name', 'num_layers', 'pooling', 'sequence']
+
+A single client reuses one MCP session across calls (created lazily on first
+use, and transparently re-created if the server reports it expired), so
+calling several tools back to back only pays the initialize/notify round
+trip once.
 """
 
 from __future__ import annotations
@@ -22,7 +27,7 @@ from typing import Any
 
 
 class Ntv3McpClient:
-    """Small helper for checking health and sending JSON requests.
+    """Small helper for calling ntv3-mcp tools over streamable-HTTP MCP.
 
     Args:
         base_url: Server base URL, for example http://127.0.0.1:8000.
@@ -34,6 +39,17 @@ class Ntv3McpClient:
         self.base_url = base_url.rstrip("/")
         self.auth_token = auth_token
         self.timeout = timeout
+        self._session_id: str | None = None
+
+    def __enter__(self) -> "Ntv3McpClient":
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        self.close()
+
+    def close(self) -> None:
+        """Drop the cached MCP session id; the next tool call starts a fresh session."""
+        self._session_id = None
 
     def health(self) -> str:
         """Return the plain-text /health response (typically 'ok')."""
@@ -64,7 +80,11 @@ class Ntv3McpClient:
         client_name: str = "ntv3_mcp_client",
         client_version: str = "1.0",
     ) -> str:
-        """Initialize an MCP streamable-HTTP session and return `mcp-session-id`."""
+        """Initialize an MCP streamable-HTTP session and return `mcp-session-id`.
+
+        Most callers don't need this directly -- `call_tool` and the tool
+        wrapper methods below create and cache a session automatically.
+        """
         payload = {
             "jsonrpc": "2.0",
             "id": "init-1",
@@ -82,13 +102,32 @@ class Ntv3McpClient:
         return session_id
 
     def notify_initialized(self, session_id: str) -> None:
-        """Send MCP `notifications/initialized` for an existing session."""
-        payload = {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}}
-        self._post_mcp_sse_json("/mcp", payload, session_id=session_id)
+        """Send MCP `notifications/initialized` for an existing session.
 
-    def call_tool(self, session_id: str, name: str, arguments: dict[str, Any] | None = None) -> dict[str, Any]:
+        Notifications get no JSON-RPC reply (servers respond with an empty
+        202), so this posts the payload without parsing an SSE body.
+        """
+        payload = {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}}
+        body = json.dumps(payload).encode("utf-8")
+        req = self._request("POST", "/mcp", body=body, content_type="application/json", session_id=session_id)
+        req.add_header("Accept", "application/json, text/event-stream")
+        with urllib.request.urlopen(req, timeout=self.timeout):
+            pass
+
+    def _ensure_session(self) -> str:
+        """Return the cached session id, creating one on first use."""
+        if self._session_id is None:
+            session_id = self.initialize_mcp()
+            self.notify_initialized(session_id)
+            self._session_id = session_id
+        return self._session_id
+
+    def call_tool(self, name: str, arguments: dict[str, Any] | None = None) -> dict[str, Any]:
         """Call one MCP tool and return the JSON-RPC result payload.
 
+        Reuses this client's cached MCP session, creating one on first call
+        and transparently re-creating it once if the server reports the
+        session is gone (e.g. after a server restart or idle timeout).
         Raises `RuntimeError` when the tool call itself returns `isError=true`.
         """
         payload = {
@@ -97,7 +136,15 @@ class Ntv3McpClient:
             "method": "tools/call",
             "params": {"name": name, "arguments": arguments or {}},
         }
-        message, _ = self._post_mcp_sse_json("/mcp", payload, session_id=session_id)
+        session_id = self._ensure_session()
+        try:
+            message, _ = self._post_mcp_sse_json("/mcp", payload, session_id=session_id)
+        except urllib.error.HTTPError as exc:
+            if exc.code not in (400, 404):
+                raise
+            self.close()
+            session_id = self._ensure_session()
+            message, _ = self._post_mcp_sse_json("/mcp", payload, session_id=session_id)
         result = message.get("result", {})
         if result.get("isError"):
             text_parts = [item.get("text", "") for item in result.get("content", []) if isinstance(item, dict)]
@@ -105,40 +152,92 @@ class Ntv3McpClient:
             raise RuntimeError(detail)
         return result
 
+    def _call_structured(self, name: str, arguments: dict[str, Any] | None = None) -> dict[str, Any]:
+        """Call a tool and return `structuredContent`, falling back to the raw result."""
+        result = self.call_tool(name, arguments)
+        structured = result.get("structuredContent")
+        return structured if isinstance(structured, dict) else result
+
+    def list_available_checkpoints(self) -> list[dict[str, Any]]:
+        """Return checkpoint metadata exposed by `list_available_checkpoints`."""
+        structured = self._call_structured("list_available_checkpoints")
+        checkpoints = structured.get("result", [])
+        return checkpoints if isinstance(checkpoints, list) else []
+
+    def get_model_info(self, checkpoint: str = "100m-pre") -> dict[str, Any]:
+        """Load a checkpoint and report architecture details (hidden size, layers, device, ...)."""
+        return self._call_structured("get_model_info", {"checkpoint": checkpoint})
+
+    def get_embedding_layers(self, checkpoint: str, which: str = "recommended") -> dict[str, Any]:
+        """List valid hidden-state layer indices for `embed_sequence`."""
+        return self._call_structured("get_embedding_layers", {"checkpoint": checkpoint, "which": which})
+
     def embed_sequence(
         self,
-        sequence: str,
+        sequence: str | list[str],
         checkpoint: str = "100m-pre",
         layer_name: str = "last",
         pooling: str = "mean",
     ) -> dict[str, Any]:
-        """Run `embed_sequence` in one short-lived MCP session and return structured content."""
-        session_id = self.initialize_mcp()
-        self.notify_initialized(session_id)
-        result = self.call_tool(
-            session_id,
-            "embed_sequence",
-            {
-                "sequence": sequence,
-                "checkpoint": checkpoint,
-                "layer_name": layer_name,
-                "pooling": pooling,
-            },
-        )
-        structured = result.get("structuredContent")
-        if isinstance(structured, dict):
-            return structured
-        # Fallback: return full MCP result if server omits structuredContent.
-        return result
+        """Compute NTv3 feature representations (embeddings) for one or more DNA sequences.
 
-    def list_available_checkpoints(self) -> list[dict[str, Any]]:
-        """Return checkpoint metadata exposed by `list_available_checkpoints`."""
-        session_id = self.initialize_mcp()
-        self.notify_initialized(session_id)
-        result = self.call_tool(session_id, "list_available_checkpoints")
-        structured = result.get("structuredContent", {})
-        checkpoints = structured.get("result", []) if isinstance(structured, dict) else []
-        return checkpoints if isinstance(checkpoints, list) else []
+        `sequence` may be a single string, or a list of strings to embed as a
+        batch (see `embed_sequence` in the server for the resulting shape).
+        """
+        return self._call_structured(
+            "embed_sequence",
+            {"sequence": sequence, "checkpoint": checkpoint, "layer_name": layer_name, "pooling": pooling},
+        )
+
+    def score_snp(
+        self,
+        sequence: str,
+        alternative_allele: str,
+        checkpoint: str = "100m-pre",
+        position: int | None = None,
+    ) -> dict[str, Any]:
+        """Zero-shot effect score for a single-nucleotide substitution.
+
+        `position` defaults to the sequence center; pass it explicitly to
+        score any other site.
+        """
+        arguments: dict[str, Any] = {
+            "sequence": sequence,
+            "alternative_allele": alternative_allele,
+            "checkpoint": checkpoint,
+        }
+        if position is not None:
+            arguments["position"] = position
+        return self._call_structured("score_snp", arguments)
+
+    def predict_masked_positions(
+        self,
+        sequence: str,
+        positions: list[int] | None = None,
+        checkpoint: str = "100m-pre",
+        top_k: int = 4,
+    ) -> dict[str, Any]:
+        """Predict top-k nucleotide probabilities at masked ('N') positions in a sequence.
+
+        If `positions` is omitted, every 'N' character in `sequence` is used.
+        """
+        return self._call_structured(
+            "predict_masked_positions",
+            {"sequence": sequence, "positions": positions or [], "checkpoint": checkpoint, "top_k": top_k},
+        )
+
+    def compare_sequences(
+        self,
+        sequence_a: str,
+        sequence_b: str,
+        checkpoint: str = "100m-pre",
+        layer_name: str = "last",
+    ) -> dict[str, Any]:
+        """Cosine similarity between the mean-pooled NTv3 embeddings of two sequences."""
+        return self._call_structured(
+            "compare_sequences",
+            {"sequence_a": sequence_a, "sequence_b": sequence_b, "checkpoint": checkpoint, "layer_name": layer_name},
+        )
 
     def _post_mcp_sse_json(
         self,
