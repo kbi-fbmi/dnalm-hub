@@ -16,7 +16,9 @@ function Write-Step {
 $script:step = 1
 
 $authToken = $env:MCP_AUTH_TOKEN
-$headers = @{}
+$headers = @{
+    "Accept" = "application/json, text/event-stream"
+}
 if (-not [string]::IsNullOrWhiteSpace($authToken)) {
     $headers["Authorization"] = "Bearer $authToken"
 }
@@ -62,7 +64,7 @@ function Parse-SseJson {
         throw "No 'data:' line found in SSE response."
     }
     $jsonText = $line.Substring(5).Trim()
-    return $jsonText | ConvertFrom-Json -Depth 20
+    return $jsonText | ConvertFrom-Json
 }
 
 Write-Host "[3/4] list_available_checkpoints"
@@ -82,7 +84,7 @@ if ($listObj.result.structuredContent -and $listObj.result.structuredContent.res
 } elseif ($listObj.result.content) {
     foreach ($item in $listObj.result.content) {
         try {
-            $obj = $item.text | ConvertFrom-Json -Depth 10
+            $obj = $item.text | ConvertFrom-Json
             if ($obj.name) { $modelNames += $obj.name }
         } catch {
             # Ignore parse misses in fallback mode.
