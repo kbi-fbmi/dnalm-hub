@@ -20,8 +20,13 @@ ENV UV_COMPILE_BYTECODE=1 \
     UV_PROJECT_ENVIRONMENT=/app/.venv
 
 # Install dependencies first so this (slow, large) layer is only rebuilt when
-# pyproject.toml / uv.lock actually change, not on every source edit.
+# pyproject.toml / uv.lock / the local common/ packages actually change, not on
+# every source edit. The local genomic-mcp-common/genomic-mcp-client path
+# dependencies (see [tool.uv.sources] in pyproject.toml) must be present before
+# the first `uv sync`, since uv builds them from source even for the
+# dependency-only layer.
 COPY pyproject.toml uv.lock ./
+COPY common ./common
 RUN uv sync --frozen --no-install-project --no-dev
 
 # Now install the project itself.
@@ -37,6 +42,7 @@ WORKDIR /app
 RUN useradd --create-home --uid 1000 --shell /usr/sbin/nologin appuser
 
 COPY --from=builder /app/.venv /app/.venv
+COPY --from=builder /app/common ./common
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/main.py /app/README.md /app/LICENSE ./
 

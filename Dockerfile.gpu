@@ -29,6 +29,10 @@ ENV UV_LINK_MODE=copy \
     UV_PROJECT_ENVIRONMENT=/app/.venv
 
 COPY pyproject.toml uv.lock ./
+# The local genomic-mcp-common/genomic-mcp-client path dependencies (see
+# [tool.uv.sources] in pyproject.toml) must be present before the first
+# `uv sync`, since uv builds them from source even for the dependency-only layer.
+COPY common ./common
 # --no-sources-package torch: ignore this project's Linux -> CPU-wheel override
 # (see pyproject.toml) so torch resolves from the default PyPI index instead,
 # pulling its CUDA runtime dependencies. Not --frozen, since overriding the
