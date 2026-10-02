@@ -13,72 +13,31 @@ MCP tool functions in ``server.py`` stay thin and easy to reason about.
 from __future__ import annotations
 
 import os
-import threading
 
 import numpy as np
 import torch
+from genomic_mcp_common import DEFAULT_VALID_NUCLEOTIDES, LRUModelCache, select_device, select_dtype
+from genomic_mcp_common import validate_sequence as validate_sequence  # re-exported for callers/tests
 from transformers import AutoModelForMaskedLM, AutoTokenizer
 
-VALID_NUCLEOTIDES = set("ACGTN")
+VALID_NUCLEOTIDES = DEFAULT_VALID_NUCLEOTIDES
 
-_DTYPE_MAP = {
-    "float32": torch.float32,
-    "fp32": torch.float32,
-    "bfloat16": torch.bfloat16,
-    "bf16": torch.bfloat16,
-    "float16": torch.float16,
-    "fp16": torch.float16,
-}
+DEVICE = select_device("NTV3_DEVICE")
+DTYPE = select_dtype("NTV3_DTYPE")
 
-_lock = threading.Lock()
-_cache: dict[str, tuple] = {}
-
-
-def _select_device() -> str:
-    override = os.environ.get("NTV3_DEVICE")
-    if override:
-        return override
-    if torch.cuda.is_available():
-        return "cuda"
-    if getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available():
-        return "mps"
-    return "cpu"
-
-
-def _select_dtype() -> torch.dtype:
-    override = os.environ.get("NTV3_DTYPE", "").strip().lower()
-    if override:
-        if override not in _DTYPE_MAP:
-            raise ValueError(f"Invalid NTV3_DTYPE={override!r}; choose one of {sorted(_DTYPE_MAP)}.")
-        return _DTYPE_MAP[override]
-    return torch.float32
-
-
-DEVICE = _select_device()
-DTYPE = _select_dtype()
-
-
-def validate_sequence(sequence: str) -> str:
-    """Normalize and validate a DNA sequence, raising ``ValueError`` on bad input."""
-    if not isinstance(sequence, str):
-        raise ValueError("Sequence must be a string.")
-    seq = sequence.strip().upper()
-    if not seq:
-        raise ValueError("Sequence must not be empty.")
-    bad_chars = sorted(set(seq) - VALID_NUCLEOTIDES)
-    if bad_chars:
-        raise ValueError(
-            f"Sequence contains invalid character(s) {bad_chars}; only A, C, G, T, N are allowed."
-        )
-    return seq
+_MAX_RESIDENT_MODELS = int(os.environ.get("NTV3_MAX_RESIDENT_MODELS", "2"))
+_cache = LRUModelCache(max_entries=_MAX_RESIDENT_MODELS)
 
 
 def load(repo_id: str):
-    """Load (and cache) the tokenizer + model for a given HuggingFace repo id."""
-    with _lock:
-        cached = _cache.get(repo_id)
-        if cached is not None:
-            return cached
+    """Load (and cache) the tokenizer + model for a given HuggingFace repo id.
+
+    Cached via a bounded LRU (`NTV3_MAX_RESIDENT_MODELS`, default 2): loading a
+    checkpoint past that limit evicts the least-recently-used one and frees its
+    VRAM, since this GPU may be shared with other genomic-mcp-* services.
+    """
+
+    def _load() -> tuple:
         try:
             tokenizer = AutoTokenizer.from_pretrained(repo_id, trust_remote_code=True)
             model = AutoModelForMaskedLM.from_pretrained(
@@ -91,8 +50,9 @@ def load(repo_id: str):
         tokenizer.padding_side = "right"
         model.to(DEVICE)
         model.eval()
-        _cache[repo_id] = (tokenizer, model)
         return tokenizer, model
+
+    return _cache.get_or_load(repo_id, _load)
 
 
 def _parse_layer(layer: str | int | None, n_layers: int) -> int:

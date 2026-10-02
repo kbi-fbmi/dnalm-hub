@@ -250,6 +250,35 @@ wheels = [
 ]
 
 [[package]]
+name = "genomic-mcp-client"
+version = "0.1.0"
+source = { editable = "common/genomic_mcp_client" }
+
+[package.metadata]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=8.0" }]
+
+[[package]]
+name = "genomic-mcp-common"
+version = "0.1.0"
+source = { editable = "common/genomic_mcp_common" }
+dependencies = [
+    { name = "mcp", extra = ["cli"] },
+    { name = "torch", version = "2.14.0", source = { registry = "https://pypi.org/simple" }, marker = "sys_platform != 'linux'" },
+    { name = "torch", version = "2.14.0+cpu", source = { registry = "https://download.pytorch.org/whl/cpu" }, marker = "sys_platform == 'linux'" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "mcp", extras = ["cli"], specifier = ">=2.0.0" },
+    { name = "torch", specifier = ">=2.2" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=8.0" }]
+
+[[package]]
 name = "h11"
 version = "0.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -588,6 +617,8 @@ name = "ntv3-mcp"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "genomic-mcp-client" },
+    { name = "genomic-mcp-common" },
     { name = "mcp", extra = ["cli"] },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "numpy", version = "2.5.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
@@ -603,6 +634,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "genomic-mcp-client", editable = "common/genomic_mcp_client" },
+    { name = "genomic-mcp-common", editable = "common/genomic_mcp_common" },
     { name = "mcp", extras = ["cli"], specifier = ">=2.0.0" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "torch", marker = "sys_platform != 'linux'", specifier = ">=2.2" },

@@ -15,8 +15,8 @@ genomic LM through MCP can reuse similar call shapes. See README.md's
 """
 
 import logging
-import os
 
+from genomic_mcp_common.http_app import build_http_app, register_health_route, run_server
 from mcp.server.mcpserver import MCPServer
 
 from . import inference
@@ -210,56 +210,12 @@ def compare_sequences(
     return {"checkpoint": repo_id, "layer_name": layer_idx, "cosine_similarity": similarity}
 
 
-@mcp.custom_route("/health", methods=["GET"])
-async def health_check(request):
-    """Liveness/readiness probe for container orchestration -- never requires auth."""
-    from starlette.responses import PlainTextResponse
-
-    return PlainTextResponse("ok")
-
-
-class _BearerAuthMiddleware:
-    """Minimal shared-secret auth for the HTTP transport.
-
-    This is intentionally simple (a single static bearer token, no OAuth/JWT) --
-    enough to keep the MCP endpoint from being wide open when exposed on a server,
-    while leaving real authn/authz (mTLS, OAuth, per-user tokens, ...) to a
-    reverse proxy in front of this container if you need it.
-    """
-
-    def __init__(self, app, token: str, exempt_paths: set[str]) -> None:
-        self.app = app
-        self.token = token
-        self.exempt_paths = exempt_paths
-
-    async def __call__(self, scope, receive, send) -> None:
-        if scope["type"] != "http" or scope["path"] in self.exempt_paths:
-            await self.app(scope, receive, send)
-            return
-        headers = dict(scope.get("headers") or [])
-        provided = headers.get(b"authorization", b"").decode("latin-1")
-        if provided != f"Bearer {self.token}":
-            from starlette.responses import PlainTextResponse
-
-            response = PlainTextResponse("Unauthorized", status_code=401)
-            await response(scope, receive, send)
-            return
-        await self.app(scope, receive, send)
+register_health_route(mcp)
 
 
 def _build_http_app(host: str, path: str):
-    app = mcp.streamable_http_app(streamable_http_path=path, host=host)
-    token = os.environ.get("MCP_AUTH_TOKEN", "").strip()
-    if token:
-        app = _BearerAuthMiddleware(app, token=token, exempt_paths={"/health"})
-    else:
-        logger.warning(
-            "MCP_AUTH_TOKEN is not set: the HTTP endpoint at %s is UNAUTHENTICATED. "
-            "Set MCP_AUTH_TOKEN, or put this behind a reverse proxy / VPN / firewall "
-            "before exposing it beyond localhost.",
-            path,
-        )
-    return app
+    """Build the streamable-HTTP ASGI app, wrapped in bearer auth if MCP_AUTH_TOKEN is set."""
+    return build_http_app(mcp, host, path, auth_token_env="MCP_AUTH_TOKEN", logger=logger)
 
 
 def main() -> None:
@@ -271,21 +227,7 @@ def main() -> None:
         exposing the MCP endpoint at http://MCP_HOST:MCP_PORT/MCP_PATH plus an
         unauthenticated GET /health for liveness/readiness checks.
     """
-    transport = os.environ.get("MCP_TRANSPORT", "stdio").strip().lower()
-    if transport == "stdio":
-        mcp.run()
-        return
-    if transport in ("http", "streamable-http"):
-        import uvicorn
-
-        host = os.environ.get("MCP_HOST", "127.0.0.1")
-        port = int(os.environ.get("MCP_PORT", "8000"))
-        path = os.environ.get("MCP_PATH", "/mcp")
-        app = _build_http_app(host, path)
-        logger.info("Starting ntv3-mcp (streamable-HTTP) on http://%s:%s%s", host, port, path)
-        uvicorn.run(app, host=host, port=port, log_level=mcp.settings.log_level.lower())
-        return
-    raise ValueError(f"Unsupported MCP_TRANSPORT={transport!r}; use 'stdio' or 'http'.")
+    run_server(mcp, logger=logger)
 
 
 if __name__ == "__main__":
