@@ -146,23 +146,26 @@ class Backends:
         backend: str,
         checkpoint: str,
         sequences: list[str],
-        *,
-        layer: str = "last",
-        species: str | None = None,
+        options: dict[str, Any] | None = None,
     ) -> list[list[float]]:
         """Mean-pooled embeddings, in `max_batch`-sized calls to the service's `embed_sequence`.
 
+        `options` are extra `embed_sequence` arguments (`layer_name`, `species`, ...).
         Raises `RuntimeError` with the service's message for bad input (invalid
-        bases, too long, unknown checkpoint, ...) and `BackendUnavailableError`
-        when the service can't be reached.
+        bases, too long, unknown checkpoint or argument, ...) and
+        `BackendUnavailableError` when the service can't be reached.
         """
         client = self._client(backend)
         vectors: list[list[float]] = []
         for start in range(0, len(sequences), self.max_batch):
             chunk = sequences[start : start + self.max_batch]
             try:
-                result = client.embed_sequence(
-                    chunk, checkpoint=checkpoint, layer_name=layer, pooling="mean", species=species
+                result = client.call(
+                    "embed_sequence",
+                    **(options or {}),
+                    sequence=chunk,
+                    checkpoint=checkpoint,
+                    pooling="mean",
                 )
             except (RuntimeError, ValueError):
                 raise

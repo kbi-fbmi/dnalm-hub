@@ -40,10 +40,13 @@ repo id (`500m`, `InstaDeepAI/NTv3_100M_pre`) works when exactly one service lis
 | `model`, `input` | `input` is one DNA sequence or a list of them (A/C/G/T/N). Token-id arrays are rejected. |
 | `encoding_format` | `float` or `base64` (the OpenAI SDKs ask for base64 and decode it for you) |
 | `dimensions` | not supported; vectors have the model's hidden size |
-| `layer` | extra: hidden-state layer, `"last"` (default) or an index (see `get_embedding_layers`) |
-| `species` | extra: for NTv3 post-trained checkpoints only (default `human`) |
+| anything else | passed to the service's `embed_sequence` as an argument (see each service's README); unknown arguments are rejected by the service |
 
-Send the extra fields with `extra_body={"species": "mouse"}` in the OpenAI SDK.
+Common extras: `layer` (alias of `layer_name`: `"last"` or a layer index, see
+`get_embedding_layers`), `species` (NTv3 post-trained, default `human`) and `remainder`
+(GENERator: `"trim_left"` or `"pad_left"` for lengths that aren't a multiple of 6).
+Send them with `extra_body={"species": "mouse"}` in the OpenAI SDK. `sequence`,
+`checkpoint` and `pooling` are set by the gateway.
 `usage.prompt_tokens` counts bases, not model tokens.
 
 Errors use the OpenAI error shape: 400 for invalid input (the service's own message,
