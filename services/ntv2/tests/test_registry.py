@@ -1,5 +1,4 @@
 import pytest
-
 from ntv2_mcp.registry import DEFAULT_MODEL_ALIAS, MODEL_REGISTRY, resolve_model
 
 
@@ -15,7 +14,9 @@ def test_resolve_known_alias_is_pinned():
 
 
 def test_resolve_alias_is_case_insensitive():
-    assert resolve_model("100M").repo_id == "InstaDeepAI/nucleotide-transformer-v2-100m-multi-species"
+    assert (
+        resolve_model("100M").repo_id == "InstaDeepAI/nucleotide-transformer-v2-100m-multi-species"
+    )
 
 
 def test_resolve_none_falls_back_to_default():

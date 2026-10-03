@@ -51,6 +51,7 @@ mcp = MCPServer(
     ),
 )
 
+
 @mcp.tool()
 @user_errors_as_tool_errors
 def list_available_checkpoints() -> list[dict]:
@@ -66,7 +67,8 @@ def list_available_checkpoints() -> list[dict]:
     return [
         {
             "name": alias,
-            "description": spec.notes or f"NTv3 {spec.params} ({spec.stage}-trained, {spec.context} context).",
+            "description": spec.notes
+            or f"NTv3 {spec.params} ({spec.stage}-trained, {spec.context} context).",
             "repo_id": spec.repo_id,
             "params": spec.params,
             "stage": spec.stage,
@@ -218,7 +220,9 @@ def predict_masked_positions(
     `species` applies to post-trained checkpoints only (default 'human').
     """
     repo_id, pad_multiple = resolve_model(checkpoint)
-    results = inference.predict_masked(repo_id, sequence, positions or [], top_k, pad_multiple, species=species)
+    results = inference.predict_masked(
+        repo_id, sequence, positions or [], top_k, pad_multiple, species=species
+    )
     return {"checkpoint": repo_id, "predictions": results}
 
 
@@ -276,7 +280,10 @@ def list_tracks(
     `contains` filters by substring (e.g. contains="ENCSR" or "CNhs").
     """
     repo_id, _ = resolve_model(checkpoint)
-    return {"checkpoint": repo_id, **inference.list_track_ids(repo_id, species, contains, limit, offset)}
+    return {
+        "checkpoint": repo_id,
+        **inference.list_track_ids(repo_id, species, contains, limit, offset),
+    }
 
 
 @mcp.tool()
@@ -302,7 +309,9 @@ def annotate_sequence(
     that many bases to keep the response small.
     """
     repo_id, pad_multiple = resolve_model(checkpoint)
-    result = inference.annotate(repo_id, sequence, pad_multiple, species=species, elements=elements, bin_size=bin_size)
+    result = inference.annotate(
+        repo_id, sequence, pad_multiple, species=species, elements=elements, bin_size=bin_size
+    )
     return {"checkpoint": repo_id, **result}
 
 
@@ -325,7 +334,9 @@ def predict_tracks(
     (`region_start`..`region_end`) is predicted; `bin_size` averages bins.
     """
     repo_id, pad_multiple = resolve_model(checkpoint)
-    result = inference.predict_tracks(repo_id, sequence, track_ids, pad_multiple, species=species, bin_size=bin_size)
+    result = inference.predict_tracks(
+        repo_id, sequence, track_ids, pad_multiple, species=species, bin_size=bin_size
+    )
     return {"checkpoint": repo_id, **result}
 
 

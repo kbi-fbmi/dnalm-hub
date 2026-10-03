@@ -112,7 +112,9 @@ def embed_sequence(
     m = resolve_model(checkpoint)
     is_batch = isinstance(sequence, list)
     sequences = sequence if is_batch else [sequence]
-    embeddings, layer_idx, n_layers = inference.compute_embeddings(m, sequences, layer_name, pooling)
+    embeddings, layer_idx, n_layers = inference.compute_embeddings(
+        m, sequences, layer_name, pooling
+    )
     base = {
         "checkpoint": m.repo_id,
         "layer_name": layer_idx,

@@ -32,7 +32,13 @@ def test_expected_tools_are_registered():
 
 def test_checkpoint_param_used_instead_of_model():
     tools = {t.name: t for t in _list_tools()}
-    for name in ["get_model_info", "embed_sequence", "score_snp", "predict_masked_positions", "compare_sequences"]:
+    for name in [
+        "get_model_info",
+        "embed_sequence",
+        "score_snp",
+        "predict_masked_positions",
+        "compare_sequences",
+    ]:
         props = tools[name].input_schema["properties"]
         assert "checkpoint" in props, f"{name} should expose a 'checkpoint' param"
         assert "model" not in props, f"{name} should not expose a legacy 'model' param"
@@ -44,7 +50,10 @@ def test_score_snp_matches_evo2_call_shape():
     schema_props = set(tools["score_snp"].input_schema["properties"])
     assert props <= schema_props
     # sequence and alternative_allele are required; checkpoint/position have defaults
-    assert set(tools["score_snp"].input_schema.get("required", [])) == {"sequence", "alternative_allele"}
+    assert set(tools["score_snp"].input_schema.get("required", [])) == {
+        "sequence",
+        "alternative_allele",
+    }
 
 
 def test_species_is_optional_on_shared_tools():
@@ -58,5 +67,8 @@ def test_species_is_optional_on_shared_tools():
 def test_post_tools_require_only_their_inputs():
     tools = {t.name: t for t in _list_tools()}
     assert set(tools["annotate_sequence"].input_schema.get("required", [])) == {"sequence"}
-    assert set(tools["predict_tracks"].input_schema.get("required", [])) == {"sequence", "track_ids"}
+    assert set(tools["predict_tracks"].input_schema.get("required", [])) == {
+        "sequence",
+        "track_ids",
+    }
     assert not tools["list_species"].input_schema.get("required")

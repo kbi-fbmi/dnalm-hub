@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 import urllib.error
 import urllib.request
-from typing import Any
+from typing import Any, Self
 
 
 class GenericMcpClient:
@@ -40,7 +40,7 @@ class GenericMcpClient:
         self.timeout = timeout
         self._session_id: str | None = None
 
-    def __enter__(self) -> "GenericMcpClient":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *exc_info: object) -> None:
@@ -108,7 +108,9 @@ class GenericMcpClient:
         """
         payload = {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}}
         body = json.dumps(payload).encode("utf-8")
-        req = self._request("POST", "/mcp", body=body, content_type="application/json", session_id=session_id)
+        req = self._request(
+            "POST", "/mcp", body=body, content_type="application/json", session_id=session_id
+        )
         req.add_header("Accept", "application/json, text/event-stream")
         with urllib.request.urlopen(req, timeout=self.timeout):
             pass
@@ -147,7 +149,9 @@ class GenericMcpClient:
             message, _ = self._post_mcp_sse_json("/mcp", payload, session_id=session_id)
         result = message.get("result", {})
         if result.get("isError"):
-            text_parts = [item.get("text", "") for item in result.get("content", []) if isinstance(item, dict)]
+            text_parts = [
+                item.get("text", "") for item in result.get("content", []) if isinstance(item, dict)
+            ]
             detail = " | ".join([p for p in text_parts if p]) or "Unknown MCP tool error."
             raise RuntimeError(detail)
         return result
@@ -172,7 +176,9 @@ class GenericMcpClient:
         """
         return self._call_structured(tool, arguments)
 
-    def _call_structured(self, name: str, arguments: dict[str, Any] | None = None) -> dict[str, Any]:
+    def _call_structured(
+        self, name: str, arguments: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Call a tool and return its structured result.
 
         Prefers `structuredContent` when the server provides it; otherwise
@@ -209,7 +215,9 @@ class GenericMcpClient:
 
     def get_embedding_layers(self, checkpoint: str, which: str = "recommended") -> dict[str, Any]:
         """List valid hidden-state layer indices for `embed_sequence`."""
-        return self._call_structured("get_embedding_layers", {"checkpoint": checkpoint, "which": which})
+        return self._call_structured(
+            "get_embedding_layers", {"checkpoint": checkpoint, "which": which}
+        )
 
     def embed_sequence(
         self,
@@ -225,7 +233,12 @@ class GenericMcpClient:
         batch (see `embed_sequence` on the server for the resulting shape).
         `species` is only for species-conditioned models (NTv3 post-trained).
         """
-        arguments = {"sequence": sequence, "checkpoint": checkpoint, "layer_name": layer_name, "pooling": pooling}
+        arguments = {
+            "sequence": sequence,
+            "checkpoint": checkpoint,
+            "layer_name": layer_name,
+            "pooling": pooling,
+        }
         return self._call_structured("embed_sequence", _with_species(arguments, species))
 
     def score_snp(
@@ -265,7 +278,12 @@ class GenericMcpClient:
         `RuntimeError` against a server that doesn't register this tool.
         If `positions` is omitted, every 'N' character in `sequence` is used.
         """
-        arguments = {"sequence": sequence, "positions": positions or [], "checkpoint": checkpoint, "top_k": top_k}
+        arguments = {
+            "sequence": sequence,
+            "positions": positions or [],
+            "checkpoint": checkpoint,
+            "top_k": top_k,
+        }
         return self._call_structured("predict_masked_positions", _with_species(arguments, species))
 
     def compare_sequences(
@@ -277,7 +295,12 @@ class GenericMcpClient:
         species: str | None = None,
     ) -> dict[str, Any]:
         """Cosine similarity between the mean-pooled embeddings of two sequences."""
-        arguments = {"sequence_a": sequence_a, "sequence_b": sequence_b, "checkpoint": checkpoint, "layer_name": layer_name}
+        arguments = {
+            "sequence_a": sequence_a,
+            "sequence_b": sequence_b,
+            "checkpoint": checkpoint,
+            "layer_name": layer_name,
+        }
         return self._call_structured("compare_sequences", _with_species(arguments, species))
 
     def generate_sequence(
@@ -309,7 +332,9 @@ class GenericMcpClient:
     ) -> tuple[dict[str, Any], dict[str, str]]:
         """POST JSON to MCP streamable-HTTP and parse the first SSE data message."""
         body = json.dumps(payload).encode("utf-8")
-        req = self._request("POST", path, body=body, content_type="application/json", session_id=session_id)
+        req = self._request(
+            "POST", path, body=body, content_type="application/json", session_id=session_id
+        )
         req.add_header("Accept", "application/json, text/event-stream")
         with urllib.request.urlopen(req, timeout=self.timeout) as resp:
             raw = resp.read().decode("utf-8")

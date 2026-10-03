@@ -4,7 +4,6 @@ import math
 
 import pytest
 import torch
-
 from dnalm_common.scoring import (
     WHOLE_SEQUENCE_METHOD,
     apply_snp,
@@ -73,7 +72,9 @@ def _uniform_except_mask_logits(batch: torch.Tensor) -> torch.Tensor:
 def test_pll_sums_true_token_log_probs_at_masked_positions_only():
     # Token ids chosen so position i holds id i: each true token is the favored one.
     input_ids = torch.tensor([0, 1, 2, 3, 4])
-    total = masked_lm_pseudo_log_likelihood(input_ids, [1, 2, 3], MASK_ID, _uniform_except_mask_logits, batch_size=2)
+    total = masked_lm_pseudo_log_likelihood(
+        input_ids, [1, 2, 3], MASK_ID, _uniform_except_mask_logits, batch_size=2
+    )
     favored = math.log(3.0 / (3.0 + (VOCAB - 1)))
     assert total == pytest.approx(3 * favored)
 
@@ -82,7 +83,9 @@ def test_pll_is_independent_of_batch_size():
     input_ids = torch.tensor([0, 5, 2, 7, 4, 1])
     positions = [0, 1, 2, 3, 4, 5]
     results = {
-        bs: masked_lm_pseudo_log_likelihood(input_ids, positions, MASK_ID, _uniform_except_mask_logits, bs)
+        bs: masked_lm_pseudo_log_likelihood(
+            input_ids, positions, MASK_ID, _uniform_except_mask_logits, bs
+        )
         for bs in (1, 4, 100)
     }
     assert results[1] == pytest.approx(results[4]) == pytest.approx(results[100])
@@ -90,4 +93,6 @@ def test_pll_is_independent_of_batch_size():
 
 def test_pll_rejects_batched_input():
     with pytest.raises(ValueError, match="1D"):
-        masked_lm_pseudo_log_likelihood(torch.zeros(2, 3, dtype=torch.long), [0], MASK_ID, _uniform_except_mask_logits)
+        masked_lm_pseudo_log_likelihood(
+            torch.zeros(2, 3, dtype=torch.long), [0], MASK_ID, _uniform_except_mask_logits
+        )

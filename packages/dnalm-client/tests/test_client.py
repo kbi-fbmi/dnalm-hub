@@ -3,7 +3,6 @@
 import json
 
 import pytest
-
 from dnalm_client import GenericMcpClient
 
 
@@ -24,12 +23,16 @@ class _StubClient(GenericMcpClient):
 
 
 def test_structured_content_is_preferred():
-    c = _StubClient([{"result": {"structuredContent": {"a": 1}, "content": [{"text": '{"a": 2}'}]}}])
+    c = _StubClient(
+        [{"result": {"structuredContent": {"a": 1}, "content": [{"text": '{"a": 2}'}]}}]
+    )
     assert c.get_model_info("x") == {"a": 1}
 
 
 def test_falls_back_to_json_text_content():
-    c = _StubClient([{"result": {"content": [{"type": "text", "text": json.dumps({"embedding": [1.0]})}]}}])
+    c = _StubClient(
+        [{"result": {"content": [{"type": "text", "text": json.dumps({"embedding": [1.0]})}]}}]
+    )
     assert c.embed_sequence("ACGT", checkpoint="x") == {"embedding": [1.0]}
 
 
@@ -62,4 +65,7 @@ def test_species_sent_only_when_given():
 def test_call_passes_kwargs_and_parses_result():
     c = _StubClient([{"result": {"content": [{"type": "text", "text": '{"region_start": 5}'}]}}])
     assert c.call("annotate_sequence", sequence="ACGT", species="human") == {"region_start": 5}
-    assert c.sent[0]["params"] == {"name": "annotate_sequence", "arguments": {"sequence": "ACGT", "species": "human"}}
+    assert c.sent[0]["params"] == {
+        "name": "annotate_sequence",
+        "arguments": {"sequence": "ACGT", "species": "human"},
+    }

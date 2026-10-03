@@ -13,7 +13,7 @@ from __future__ import annotations
 import gc
 import threading
 from collections import OrderedDict
-from typing import Callable
+from collections.abc import Callable
 
 import torch
 
@@ -33,7 +33,7 @@ class LRUModelCache:
             raise ValueError("max_entries must be >= 1.")
         self._max_entries = max_entries
         self._lock = threading.Lock()
-        self._data: "OrderedDict[str, tuple]" = OrderedDict()
+        self._data: OrderedDict[str, tuple] = OrderedDict()
 
     def get_or_load(self, key: str, loader: Callable[[], tuple]) -> tuple:
         """Return the cached value for `key`, loading it via `loader()` on a miss."""
@@ -69,7 +69,7 @@ def _release(value: tuple) -> None:
         if hasattr(model, "to"):
             model.to("cpu")
         del model
-    except Exception:  # noqa: BLE001 - eviction must never crash the caller's request
+    except Exception:  # noqa: BLE001, S110 - eviction must never crash the caller's request
         pass
     gc.collect()
     if torch.cuda.is_available():

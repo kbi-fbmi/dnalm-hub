@@ -65,12 +65,16 @@ def load(m: ResolvedModel):
 
     def _load() -> tuple:
         try:
-            tokenizer = AutoTokenizer.from_pretrained(m.repo_id, revision=m.revision, trust_remote_code=True)
+            tokenizer = AutoTokenizer.from_pretrained(
+                m.repo_id, revision=m.revision, trust_remote_code=True
+            )
             model = AutoModelForMaskedLM.from_pretrained(
                 m.repo_id, revision=m.revision, trust_remote_code=True, dtype=DTYPE
             )
-        except Exception as exc:  # noqa: BLE001 - surface a clear, actionable message
-            raise RuntimeError(f"Failed to load NTv2 model '{m.repo_id}' from HuggingFace: {exc}") from exc
+        except Exception as exc:
+            raise RuntimeError(
+                f"Failed to load NTv2 model '{m.repo_id}' from HuggingFace: {exc}"
+            ) from exc
         tokenizer.padding_side = "right"
         model.to(DEVICE)
         model.eval()
@@ -105,7 +109,10 @@ def _tokenize(m: ResolvedModel, tokenizer, sequences: list[str]) -> dict:
     encoded = tokenizer(sequences, add_special_tokens=True, truncation=False)
     check_token_lengths([len(ids) for ids in encoded["input_ids"]], max_tokens(m, tokenizer))
     batch = tokenizer.pad(encoded, padding=True, return_tensors="pt", return_attention_mask=True)
-    return {"input_ids": batch["input_ids"].to(DEVICE), "attention_mask": batch["attention_mask"].to(DEVICE)}
+    return {
+        "input_ids": batch["input_ids"].to(DEVICE),
+        "attention_mask": batch["attention_mask"].to(DEVICE),
+    }
 
 
 def _parse_layer(layer: str | int | None, n_layers: int) -> int:
@@ -114,7 +121,9 @@ def _parse_layer(layer: str | int | None, n_layers: int) -> int:
     try:
         idx = int(layer)
     except (TypeError, ValueError) as exc:
-        raise ValueError(f"layer must be an integer (as int or string) or 'last'; got {layer!r}") from exc
+        raise ValueError(
+            f"layer must be an integer (as int or string) or 'last'; got {layer!r}"
+        ) from exc
     if idx < 0:
         idx = n_layers + 1 + idx
     if not (0 <= idx <= n_layers):
@@ -135,7 +144,9 @@ def model_info(m: ResolvedModel) -> dict:
     tokenizer, model, out = _probe_hidden_states(m)
     n_params = sum(p.numel() for p in model.parameters())
     raw_cfg = model.config.to_dict()
-    safe_cfg = {k: v for k, v in raw_cfg.items() if isinstance(v, (int, float, str, bool)) or v is None}
+    safe_cfg = {
+        k: v for k, v in raw_cfg.items() if isinstance(v, (int, float, str, bool)) or v is None
+    }
     return {
         "repo_id": m.repo_id,
         "revision": m.revision,
@@ -161,7 +172,7 @@ def list_embedding_layers(m: ResolvedModel, which: str) -> dict:
     """
     _, _, out = _probe_hidden_states(m)
     n_layers = len(out.hidden_states) - 1
-    all_layers = list(range(0, n_layers + 1))
+    all_layers = list(range(n_layers + 1))
     if which == "all":
         layers = all_layers
         info = f"All {len(all_layers)} hidden-state layers (0=input embeddings, {n_layers}=final layer/'last')."
@@ -241,7 +252,9 @@ def pseudo_log_likelihood(m: ResolvedModel, sequence: str) -> float:
     )
 
 
-def score_variant(m: ResolvedModel, sequence: str, alt_allele: str, position: int | None = None) -> dict:
+def score_variant(
+    m: ResolvedModel, sequence: str, alt_allele: str, position: int | None = None
+) -> dict:
     """Whole-sequence PLL(mutated) - PLL(reference); see `dnalm_common.scoring`."""
     return score_snp_whole_sequence(
         sequence, alt_allele, lambda s: pseudo_log_likelihood(m, s), position=position

@@ -1,7 +1,6 @@
 """Pure-logic tests that don't require downloading any model weights."""
 
 import pytest
-
 from ntv3_mcp.inference import validate_sequence
 
 
