@@ -6,6 +6,10 @@ reachable over [MCP](https://modelcontextprotocol.io). Each model family runs as
 service with the same tool names and response shapes, so a client can switch
 between models by changing only the URL and the `checkpoint`.
 
+Developed at the Department of Biomedical Informatics, Faculty of Biomedical Engineering,
+Czech Technical University in Prague (Kladno, Czech Republic). If you use it in your
+work, please [cite our paper](#citation).
+
 | Service | Models | Port | Status |
 |---|---|---|---|
 | [`services/ntv3`](services/ntv3) | InstaDeep Nucleotide Transformer v3 (1 token per base) | 8000 | running |
@@ -86,6 +90,30 @@ make new-service NAME=hyenadna   # add a model family -> docs/adding-a-model.md
 current format; uv 0.5 is too old). To use a specific binary, run
 `make test UV=/path/to/uv`.
 
+## Citation
+
+If you use dnalm-hub, please cite:
+
+> Krupička, R.; Komárková, M.; Dvorský, B.; Kollinová, K.; Klempíř, O.
+> Benchmarking genomic foundation models for binary classification of gene fusion
+> breakpoints from DNA sequences. *BioData Mining*. 2026, 19(1), 41. ISSN 1756-0381.
+> [doi:10.1186/s13040-026-00553-1](https://doi.org/10.1186/s13040-026-00553-1)
+
+```bibtex
+@article{krupicka2026gfm_fusion,
+  author  = {Krupi{\v{c}}ka, Radim and Kom{\'a}rkov{\'a}, Mariana and Dvorsk{\'y}, Bohuslav
+             and Kollinov{\'a}, Kate{\v{r}}ina and Klemp{\'i}{\v{r}}, Ond{\v{r}}ej},
+  title   = {Benchmarking genomic foundation models for binary classification of gene
+             fusion breakpoints from DNA sequences},
+  journal = {BioData Mining},
+  year    = {2026},
+  volume  = {19},
+  number  = {1},
+  pages   = {41},
+  issn    = {1756-0381},
+  doi     = {10.1186/s13040-026-00553-1}
+}
+```
 ## License
 
 The code is MIT licensed. Model weights have their own licenses; for example, the
