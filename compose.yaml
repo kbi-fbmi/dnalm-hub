@@ -1,0 +1,55 @@
+# dnalm-hub GPU deployment: one container per model family. From the repo root:
+#
+#   docker compose up -d --build     start / update everything
+#   docker compose ps                status
+#   docker compose logs -f ntv2      logs of one service
+#   docker compose down              stop
+#
+# Secrets come from .env next to this file (see .env.example); every service uses
+# the same MCP_AUTH_TOKEN. To add a model family, copy one of the blocks below.
+name: dnalm-hub
+
+x-service: &service
+  gpus: all
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+    interval: 30s
+    timeout: 5s
+    retries: 3
+    start_period: 60s
+
+services:
+  ntv3:
+    <<: *service
+    build:
+      context: .
+      dockerfile: services/ntv3/Dockerfile
+    image: ntv3-mcp:gpu
+    ports: ["8000:8000"]
+    environment:
+      # NTv3 checkpoints are gated: accept the license on HuggingFace first.
+      HF_TOKEN: ${HF_TOKEN:?Set HF_TOKEN in .env -- see .env.example}
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:-}
+      NTV3_DTYPE: float32
+    volumes:
+      - ntv3-hf-cache:/home/appuser/.cache/huggingface
+
+  ntv2:
+    <<: *service
+    build:
+      context: .
+      dockerfile: services/ntv2/Dockerfile
+    image: ntv2-mcp:gpu
+    ports: ["8001:8000"]
+    environment:
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:-}
+    volumes:
+      - ntv2-hf-cache:/home/appuser/.cache/huggingface
+
+# Fixed names so already-downloaded weights are reused.
+volumes:
+  ntv3-hf-cache:
+    name: ntv3-mcp_hf-cache
+  ntv2-hf-cache:
+    name: ntv2-hf-cache
