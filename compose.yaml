@@ -18,6 +18,12 @@
 # to write there -- set them in .env to the directory owner (`id -u`, `id -g`).
 name: dnalm-hub
 
+# Environment shared by every model service. DNALM_IDLE_UNLOAD_SECONDS frees a model's
+# VRAM after that long without requests (0 = keep loaded), so the services share the GPU.
+x-env: &env
+  MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:-}
+  DNALM_IDLE_UNLOAD_SECONDS: ${DNALM_IDLE_UNLOAD_SECONDS:-900}
+
 x-service: &service
   gpus: all
   restart: unless-stopped
@@ -47,8 +53,8 @@ services:
     ports: ["8000:8000"]
     environment:
       # NTv3 checkpoints are gated: accept the license on HuggingFace first.
+      <<: *env
       HF_TOKEN: ${HF_TOKEN:?Set HF_TOKEN in .env -- see .env.example}
-      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:-}
       NTV3_DTYPE: float32
 
   ntv2:
@@ -58,8 +64,68 @@ services:
       dockerfile: services/ntv2/Dockerfile
     image: ntv2-mcp:gpu
     ports: ["8001:8000"]
+    environment: *env
+
+  dnabert2:
+    <<: *service
+    build:
+      context: .
+      dockerfile: services/dnabert2/Dockerfile
+    image: dnabert2-mcp:gpu
+    ports: ["8002:8000"]
+    environment: *env
+
+  hyenadna:
+    <<: *service
+    build:
+      context: .
+      dockerfile: services/hyenadna/Dockerfile
+    image: hyenadna-mcp:gpu
+    ports: ["8003:8000"]
     environment:
-      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:-}
+      <<: *env
+      # A 1M-base input needs ~11 GiB VRAM; optionally cap below the checkpoint limit:
+      # HYENADNA_MAX_BASES: "450000"
+
+  evo2:
+    <<: *service
+    build:
+      context: .
+      dockerfile: services/evo2/Dockerfile
+    image: evo2-mcp:gpu
+    ports: ["8004:8000"]
+    environment:
+      <<: *env
+      # Longest accepted input in bases: 32 kb peaks at ~18 GiB VRAM, 64 kb at ~24 GiB
+      # (fine on a dedicated 32 GB GPU).
+      EVO2_MAX_SEQ_LEN: "32768"
+
+  generator:
+    <<: *service
+    build:
+      context: .
+      dockerfile: services/generator/Dockerfile
+    image: generator-mcp:gpu
+    ports: ["8005:8000"]
+    environment: *env
+
+  genalm:
+    <<: *service
+    build:
+      context: .
+      dockerfile: services/genalm/Dockerfile
+    image: genalm-mcp:gpu
+    ports: ["8006:8000"]
+    environment: *env
+
+  grover:
+    <<: *service
+    build:
+      context: .
+      dockerfile: services/grover/Dockerfile
+    image: grover-mcp:gpu
+    ports: ["8007:8000"]
+    environment: *env
 
   gateway:
     build:
@@ -70,5 +136,8 @@ services:
     ports: ["8080:8080"]
     environment:
       MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:-}
-      GATEWAY_BACKENDS: ntv3=http://ntv3:8000,ntv2=http://ntv2:8000
-    depends_on: [ntv3, ntv2]
+      GATEWAY_BACKENDS: >-
+        ntv3=http://ntv3:8000,ntv2=http://ntv2:8000,dnabert2=http://dnabert2:8000,
+        hyenadna=http://hyenadna:8000,evo2=http://evo2:8000,generator=http://generator:8000,
+        genalm=http://genalm:8000,grover=http://grover:8000
+    depends_on: [ntv3, ntv2, dnabert2, hyenadna, evo2, generator, genalm, grover]

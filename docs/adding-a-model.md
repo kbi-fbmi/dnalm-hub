@@ -29,7 +29,8 @@ are stubs that raise `NotImplementedError`.
 Reuse `packages/dnalm-common` instead of copying code. It provides:
 
 - device/dtype selection (`select_device`, `select_dtype`),
-- the bounded model cache with VRAM release (`LRUModelCache`),
+- the bounded model cache with VRAM release (`LRUModelCache`; also unloads idle models
+  when `DNALM_IDLE_UNLOAD_SECONDS` is set),
 - sequence validation (`validate_sequence`),
 - SNP scoring (`score_snp_whole_sequence`, `masked_lm_pseudo_log_likelihood`),
 - the single-nucleotide tokenizer check (`is_single_nucleotide_tokenizer`),
@@ -51,6 +52,10 @@ Clients and the OpenAI-compatible gateway (`services/gateway`) rely on that.
 | `generate_sequence` | causal (autoregressive) LM |
 
 `embed_sequence` must accept one string or a list of strings (a batch).
+`generate_sequence` takes `prompt, checkpoint, max_new_tokens, temperature, top_k, seed=None`
+(temperature 0 = greedy; a `top_k` default that means "no filtering") and returns
+`checkpoint`, `prompt`, `generated_sequence` (new bases only), `full_sequence`,
+`num_new_tokens`, `num_new_bases`, `temperature`, `top_k` and `seed`.
 `score_snp` must set `method`: `single_position_masked_lm_log_prob` (NTv3 only) or
 `whole_sequence_log_prob_delta` (everything else).
 
@@ -65,7 +70,8 @@ Never truncate silently.
 deployment (`make build` builds from it as well). Copy an existing block and give it:
 
 - `image: <name>-mcp:gpu` and `dockerfile: services/<name>/Dockerfile`,
-- a new host port.
+- a new host port,
+- `environment: *env` (or `<<: *env` plus its own variables) for the shared settings.
 
 Then add `<name>=http://<name>:8000` to the gateway's `GATEWAY_BACKENDS` (and to its
 `depends_on`), so `POST /v1/embeddings` with `model="<name>/<checkpoint>"` works.

@@ -6,8 +6,9 @@
 
 Works with the official OpenAI SDKs (`base_url="http://host:8080/v1"`). Each input is
 one DNA sequence; the vector is the mean-pooled embedding from the service's
-`embed_sequence` tool. Non-OpenAI request fields (send them via `extra_body`):
-`layer` (hidden-state layer, default "last") and `species` (NTv3 post-trained only).
+`embed_sequence` tool. Any non-OpenAI request field (send it via `extra_body`) is passed
+to that tool as an argument, e.g. `layer` (alias of `layer_name`), `species` (NTv3
+post-trained) or `remainder` (GENERator); the service rejects arguments it doesn't know.
 `usage` counts bases, not model tokens.
 """
 
@@ -50,6 +51,12 @@ def _encode(vector: list[float], encoding_format: str) -> list[float] | str:
     return vector
 
 
+# Standard OpenAI embeddings fields; everything else goes to the service's embed_sequence.
+_OPENAI_FIELDS = {"model", "input", "encoding_format", "dimensions", "user"}
+# embed_sequence arguments the gateway sets itself.
+_RESERVED_TOOL_ARGS = {"sequence", "checkpoint", "pooling"}
+
+
 def _parse_embedding_request(body: Any) -> dict[str, Any] | JSONResponse:
     """Validate the request body; return the parsed fields or an error response."""
     if not isinstance(body, dict):
@@ -77,18 +84,20 @@ def _parse_embedding_request(body: Any) -> dict[str, Any] | JSONResponse:
         return _invalid(
             "'dimensions' is not supported: vectors have the model's hidden size.", "dimensions"
         )
-    layer = body.get("layer", "last")
-    if isinstance(layer, bool) or not isinstance(layer, (str, int)):
-        return _invalid("'layer' must be 'last' or a layer index.", "layer")
-    species = body.get("species")
-    if species is not None and not isinstance(species, str):
-        return _invalid("'species' must be a string.", "species")
+    options = {k: v for k, v in body.items() if k not in _OPENAI_FIELDS}
+    reserved = sorted(options.keys() & _RESERVED_TOOL_ARGS)
+    if reserved:
+        return _invalid(f"{reserved[0]!r} is set by the gateway and can't be passed.", reserved[0])
+    if "layer" in options:
+        layer = options.pop("layer")
+        if isinstance(layer, bool) or not isinstance(layer, (str, int)):
+            return _invalid("'layer' must be 'last' or a layer index.", "layer")
+        options["layer_name"] = str(layer)
     return {
         "model": model.strip(),
         "inputs": inputs,
         "encoding_format": encoding_format,
-        "layer": str(layer),
-        "species": species,
+        "options": options,
     }
 
 
@@ -147,8 +156,7 @@ def create_app(backends: Backends, *, auth_token: str | None = None) -> Starlett
                 backend,
                 checkpoint,
                 parsed["inputs"],
-                layer=parsed["layer"],
-                species=parsed["species"],
+                parsed["options"],
             )
         except UnknownModelError as exc:
             return _error(

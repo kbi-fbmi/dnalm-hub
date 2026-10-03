@@ -41,19 +41,11 @@ class FakeClient:
         self._check_up()
         return CHECKPOINTS[self.base_url]
 
-    def embed_sequence(self, sequence, checkpoint, layer_name, pooling, species=None):
+    def call(self, tool, **arguments):
+        assert tool == "embed_sequence"
         self._check_up()
-        self.calls.append(
-            {
-                "url": self.base_url,
-                "sequence": sequence,
-                "checkpoint": checkpoint,
-                "layer_name": layer_name,
-                "pooling": pooling,
-                "species": species,
-                "token": self.auth_token,
-            }
-        )
+        self.calls.append({"url": self.base_url, "token": self.auth_token, **arguments})
+        sequence = arguments["sequence"]
         if any("X" in s for s in sequence):
             raise RuntimeError("Invalid DNA characters: X")
         return {"embeddings": [[float(len(s)), 0.5, -1.0] for s in sequence]}
@@ -117,8 +109,8 @@ def test_embeddings_single_string():
     assert call["url"] == "http://ntv3"
     assert call["sequence"] == ["ACGT"]
     assert call["pooling"] == "mean"
-    assert call["layer_name"] == "last"
-    assert call["species"] is None
+    assert "layer_name" not in call  # service default
+    assert "species" not in call
     assert call["token"] == "backend-token"
 
 
@@ -136,12 +128,29 @@ def test_embeddings_batch_is_chunked_and_ordered():
 def test_embeddings_extra_fields_are_forwarded():
     make_client().post(
         "/v1/embeddings",
-        json={"model": "ntv3/100m-post", "input": "ACGT", "layer": 6, "species": "mouse"},
+        json={
+            "model": "ntv3/100m-post",
+            "input": "ACGT",
+            "layer": 6,
+            "species": "mouse",
+            "remainder": "trim_left",
+            "user": "ignored",
+        },
     )
     call = FakeClient.calls[0]
     assert call["checkpoint"] == "100m-post"  # not listed, still passed through
     assert call["layer_name"] == "6"
     assert call["species"] == "mouse"
+    assert call["remainder"] == "trim_left"
+    assert "user" not in call
+
+
+def test_embeddings_reserved_tool_args_rejected():
+    resp = make_client().post(
+        "/v1/embeddings", json={"model": "ntv3/100m-pre", "input": "ACGT", "pooling": "per_token"}
+    )
+    assert resp.status_code == 400
+    assert resp.json()["error"]["param"] == "pooling"
 
 
 def test_embeddings_hf_repo_id_passthrough():
