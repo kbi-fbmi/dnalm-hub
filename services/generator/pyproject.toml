@@ -1,0 +1,44 @@
+[project]
+name = "generator-mcp"
+version = "0.1.0"
+description = "MCP server exposing GenerTeam's GENERator causal DNA language models: embeddings, exact-likelihood variant scoring, and sequence generation."
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Radim Krupička" }]
+dependencies = [
+    "mcp[cli]>=2.0.0",
+    # GENERator weights load into the stock LlamaForCausalLM (no remote code), so any
+    # recent transformers works; >=4.56 for the `dtype=` from_pretrained kwarg.
+    # The lockfile resolves 5.x, which is what the GPU smoke test ran.
+    "transformers>=4.56,<6",
+    # >=2.7: first release with CUDA 12.8 wheels, needed for Blackwell (sm_120) GPUs.
+    "torch>=2.7",
+    # vocab.txt / tokenizer_config.json are fetched directly (kmer.py re-implements the tokenizer).
+    "huggingface-hub>=0.34",
+    "numpy>=1.26",
+    "dnalm-common",
+]
+
+[project.scripts]
+generator-mcp = "generator_mcp.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/generator_mcp"]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+# CPU torch wheel on Linux for local dev/tests; the GPU Dockerfile drops this
+# override with --no-sources-package torch.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+dnalm-common = { path = "../../packages/dnalm-common", editable = true }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
