@@ -153,10 +153,29 @@ class GenericMcpClient:
         return result
 
     def _call_structured(self, name: str, arguments: dict[str, Any] | None = None) -> dict[str, Any]:
-        """Call a tool and return `structuredContent`, falling back to the raw result."""
+        """Call a tool and return its structured result.
+
+        Prefers `structuredContent` when the server provides it; otherwise
+        parses the JSON text out of `content[0].text` (servers that return a
+        plain `dict` from a tool function may only populate `content`, not
+        `structuredContent`, depending on MCP SDK version/configuration).
+        Falls back to the raw result if neither shape is present/parseable.
+        """
         result = self.call_tool(name, arguments)
         structured = result.get("structuredContent")
-        return structured if isinstance(structured, dict) else result
+        if isinstance(structured, dict):
+            return structured
+        content = result.get("content")
+        if isinstance(content, list) and content:
+            text = content[0].get("text") if isinstance(content[0], dict) else None
+            if isinstance(text, str):
+                try:
+                    parsed = json.loads(text)
+                except json.JSONDecodeError:
+                    parsed = None
+                if isinstance(parsed, dict):
+                    return parsed
+        return result
 
     def list_available_checkpoints(self) -> list[dict[str, Any]]:
         """Return checkpoint metadata exposed by `list_available_checkpoints`."""

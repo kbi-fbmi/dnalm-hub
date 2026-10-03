@@ -76,6 +76,7 @@ def _tokenize(tokenizer, sequences: list[str], pad_multiple: int):
         padding=True,
         pad_to_multiple_of=pad_multiple,
         return_tensors="pt",
+        return_attention_mask=True,
     )
     return {k: v.to(DEVICE) for k, v in batch.items()}
 
