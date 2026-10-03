@@ -18,7 +18,9 @@ DEFAULT_SINGLE_NUCLEOTIDES = ("A", "C", "G", "T", "N")
 _PROBE_SEQUENCE = "ACGTACGTACGTAC"
 
 
-def is_single_nucleotide_tokenizer(tokenizer, nucleotides: tuple[str, ...] = DEFAULT_SINGLE_NUCLEOTIDES) -> bool:
+def is_single_nucleotide_tokenizer(
+    tokenizer, nucleotides: tuple[str, ...] = DEFAULT_SINGLE_NUCLEOTIDES
+) -> bool:
     """True if every base maps to its own distinct token id AND sequences tokenize 1 base -> 1 token.
 
     Checking the vocab alone is not enough: NTv2's 6-mer vocab also contains the

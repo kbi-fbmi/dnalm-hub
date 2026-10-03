@@ -36,25 +36,39 @@ MODEL_REGISTRY: dict[str, ModelSpec] = {
     ),
     "100m-pre-8kb": ModelSpec("InstaDeepAI/NTv3_100M_pre_8kb", "0.1B", "pre", "8kb", 128),
     "100m-post": ModelSpec(
-        "InstaDeepAI/NTv3_100M_post", "0.1B", "post", "full (~1Mb)", 128,
+        "InstaDeepAI/NTv3_100M_post",
+        "0.1B",
+        "post",
+        "full (~1Mb)",
+        128,
         "Post-trained on functional genomics: species-conditioned (`species`, default human); adds "
         "annotate_sequence (genes, exons, promoters, ...) and predict_tracks (RNA-seq/ChIP/ATAC signal).",
     ),
     "100m-post-131kb": ModelSpec("InstaDeepAI/NTv3_100M_post_131kb", "0.1B", "post", "131kb", 128),
     "650m-pre": ModelSpec(
-        "InstaDeepAI/NTv3_650M_pre", "0.7B", "pre", "full (~1Mb)", 128,
+        "InstaDeepAI/NTv3_650M_pre",
+        "0.7B",
+        "pre",
+        "full (~1Mb)",
+        128,
         "Highest-quality pre-trained checkpoint; heavier compute and memory.",
     ),
     "650m-pre-8kb": ModelSpec("InstaDeepAI/NTv3_650M_pre_8kb", "0.7B", "pre", "8kb", 128),
     "650m-post": ModelSpec("InstaDeepAI/NTv3_650M_post", "0.7B", "post", "full (~1Mb)", 128),
     "650m-post-131kb": ModelSpec("InstaDeepAI/NTv3_650M_post_131kb", "0.7B", "post", "131kb", 128),
     "5ds-pre": ModelSpec(
-        "InstaDeepAI/NTv3_5downsample_pre", "0.6B", "pre", "full (~1Mb)", 32,
+        "InstaDeepAI/NTv3_5downsample_pre",
+        "0.6B",
+        "pre",
+        "full (~1Mb)",
+        32,
         "Experimental 5-downsample variant; requires length divisible by 32, not 128.",
     ),
     "5ds-pre-8kb": ModelSpec("InstaDeepAI/NTv3_5downsample_pre_8kb", "0.6B", "pre", "8kb", 32),
     "5ds-post": ModelSpec("InstaDeepAI/NTv3_5downsample_post", "0.6B", "post", "full (~1Mb)", 32),
-    "5ds-post-131kb": ModelSpec("InstaDeepAI/NTv3_5downsample_post_131kb", "0.6B", "post", "131kb", 32),
+    "5ds-post-131kb": ModelSpec(
+        "InstaDeepAI/NTv3_5downsample_post_131kb", "0.6B", "post", "131kb", 32
+    ),
 }
 
 DEFAULT_MODEL_ALIAS = "100m-pre"

@@ -5,10 +5,13 @@ from __future__ import annotations
 DEFAULT_VALID_NUCLEOTIDES = set("ACGTN")
 
 
-def validate_sequence(sequence: str, valid_nucleotides: set[str] = DEFAULT_VALID_NUCLEOTIDES) -> str:
+def validate_sequence(
+    sequence: str, valid_nucleotides: set[str] = DEFAULT_VALID_NUCLEOTIDES
+) -> str:
     """Normalize and validate a DNA sequence, raising `ValueError` on bad input."""
     if not isinstance(sequence, str):
-        raise ValueError("Sequence must be a string.")
+        # ValueError, not TypeError: only ValueError reaches MCP clients (user_errors_as_tool_errors).
+        raise ValueError("Sequence must be a string.")  # noqa: TRY004
     seq = sequence.strip().upper()
     if not seq:
         raise ValueError("Sequence must not be empty.")

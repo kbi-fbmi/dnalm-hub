@@ -1,5 +1,4 @@
 import pytest
-
 from ntv3_mcp.registry import DEFAULT_MODEL_ALIAS, MODEL_REGISTRY, resolve_model
 
 

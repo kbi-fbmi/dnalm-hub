@@ -65,7 +65,7 @@ def load(repo_id: str):
             config = AutoConfig.from_pretrained(repo_id, trust_remote_code=True)
             model_cls = AutoModel if config.model_type == POST_MODEL_TYPE else AutoModelForMaskedLM
             model = model_cls.from_pretrained(repo_id, trust_remote_code=True, torch_dtype=DTYPE)
-        except Exception as exc:  # noqa: BLE001 - surface a clear, actionable message
+        except Exception as exc:
             raise RuntimeError(
                 f"Failed to load NTv3 model '{repo_id}' from HuggingFace: {exc}"
             ) from exc
@@ -116,7 +116,9 @@ def _parse_layer(layer: str | int | None, n_layers: int) -> int:
     try:
         idx = int(layer)
     except (TypeError, ValueError) as exc:
-        raise ValueError(f"layer must be an integer (as int or string) or 'last'; got {layer!r}") from exc
+        raise ValueError(
+            f"layer must be an integer (as int or string) or 'last'; got {layer!r}"
+        ) from exc
     if idx < 0:
         idx = n_layers + 1 + idx
     if not (0 <= idx <= n_layers):
@@ -160,7 +162,9 @@ def model_info(repo_id: str, pad_multiple: int) -> dict:
     tokenizer, model, out = _probe_hidden_states(repo_id, pad_multiple)
     n_params = sum(p.numel() for p in model.parameters())
     raw_cfg = model.config.to_dict()
-    safe_cfg = {k: v for k, v in raw_cfg.items() if isinstance(v, (int, float, str, bool)) or v is None}
+    safe_cfg = {
+        k: v for k, v in raw_cfg.items() if isinstance(v, (int, float, str, bool)) or v is None
+    }
     info = {
         "repo_id": repo_id,
         "device": DEVICE,
@@ -195,7 +199,7 @@ def list_embedding_layers(repo_id: str, pad_multiple: int, which: str) -> dict:
     full_len = out.hidden_states[0].shape[1]
     resolution = [full_len // h.shape[1] for h in out.hidden_states]
     if which == "all":
-        layers = list(range(0, n_layers + 1))
+        layers = list(range(n_layers + 1))
         info = (
             f"All {n_layers + 1} hidden-state layers (0=input embeddings, {n_layers}=final layer/'last'). "
             "`bases_per_position` gives each layer's downsampling (U-Net architecture)."
@@ -244,10 +248,16 @@ def compute_embeddings(
     n_layers = len(hidden_states) - 1
     idx = _parse_layer(layer, n_layers)
     h = hidden_states[idx].float()
-    real = layer_lengths(batch["attention_mask"].sum(dim=1), batch["input_ids"].shape[1], h.shape[1])
+    real = layer_lengths(
+        batch["attention_mask"].sum(dim=1), batch["input_ids"].shape[1], h.shape[1]
+    )
 
     if pooling == "mean":
-        mask = (torch.arange(h.shape[1], device=h.device)[None, :] < real[:, None]).unsqueeze(-1).to(h.dtype)
+        mask = (
+            (torch.arange(h.shape[1], device=h.device)[None, :] < real[:, None])
+            .unsqueeze(-1)
+            .to(h.dtype)
+        )
         pooled = (h * mask).sum(dim=1) / mask.sum(dim=1).clamp(min=1)
         return list(pooled.cpu().numpy()), idx, n_layers
     return [h[i, : int(n)].cpu().numpy() for i, n in enumerate(real.tolist())], idx, n_layers
@@ -274,20 +284,28 @@ def score_variant(
     if position is None:
         position = len(seq) // 2
     if not (0 <= position < len(seq)):
-        raise ValueError(f"position must be within [0, {len(seq) - 1}] for a sequence of length {len(seq)}.")
+        raise ValueError(
+            f"position must be within [0, {len(seq) - 1}] for a sequence of length {len(seq)}."
+        )
 
-    ref = (ref_allele.strip().upper() if ref_allele else seq[position])
+    ref = ref_allele.strip().upper() if ref_allele else seq[position]
     alt = alt_allele.strip().upper()
     if len(ref) != 1 or ref not in VALID_NUCLEOTIDES:
-        raise ValueError(f"ref_allele must be a single character in {sorted(VALID_NUCLEOTIDES)}; got {ref_allele!r}.")
+        raise ValueError(
+            f"ref_allele must be a single character in {sorted(VALID_NUCLEOTIDES)}; got {ref_allele!r}."
+        )
     if len(alt) != 1 or alt not in VALID_NUCLEOTIDES:
-        raise ValueError(f"alt_allele must be a single character in {sorted(VALID_NUCLEOTIDES)}; got {alt_allele!r}.")
+        raise ValueError(
+            f"alt_allele must be a single character in {sorted(VALID_NUCLEOTIDES)}; got {alt_allele!r}."
+        )
     if seq[position] != ref:
         raise ValueError(
             f"Reference allele mismatch: sequence has '{seq[position]}' at position {position}, expected '{ref}'."
         )
     if tokenizer.mask_token_id is None:
-        raise RuntimeError(f"Tokenizer for '{repo_id}' has no mask token; variant scoring is unavailable.")
+        raise RuntimeError(
+            f"Tokenizer for '{repo_id}' has no mask token; variant scoring is unavailable."
+        )
 
     batch = _tokenize(tokenizer, [seq], pad_multiple)
     input_ids = batch["input_ids"].clone()
@@ -344,7 +362,9 @@ def predict_masked(
         if not (0 <= p < len(seq)):
             raise ValueError(f"position {p} is out of range [0, {len(seq) - 1}] for this sequence.")
     if tokenizer.mask_token_id is None:
-        raise RuntimeError(f"Tokenizer for '{repo_id}' has no mask token; masked prediction is unavailable.")
+        raise RuntimeError(
+            f"Tokenizer for '{repo_id}' has no mask token; masked prediction is unavailable."
+        )
     top_k = max(1, min(top_k, len(VALID_NUCLEOTIDES)))
 
     single = _tokenize(tokenizer, [seq], pad_multiple)
@@ -365,12 +385,16 @@ def predict_masked(
     results = []
     for row, p in enumerate(positions):
         probs = torch.softmax(out.logits[row, p].float(), dim=-1)
-        ranked = sorted(((nt, probs[i].item()) for nt, i in nt_ids.items()), key=lambda kv: kv[1], reverse=True)
+        ranked = sorted(
+            ((nt, probs[i].item()) for nt, i in nt_ids.items()), key=lambda kv: kv[1], reverse=True
+        )
         results.append(
             {
                 "position": p,
                 "original": seq[p],
-                "predictions": [{"nucleotide": nt, "probability": prob} for nt, prob in ranked[:top_k]],
+                "predictions": [
+                    {"nucleotide": nt, "probability": prob} for nt, prob in ranked[:top_k]
+                ],
             }
         )
     return results
@@ -412,23 +436,34 @@ def species_overview(repo_id: str) -> dict:
     tracks = config.bigwigs_per_species
     return {
         "default_species": DEFAULT_SPECIES,
-        "species": [{"name": s, "num_tracks": len(tracks.get(s, []))} for s in supported_species(config)],
+        "species": [
+            {"name": s, "num_tracks": len(tracks.get(s, []))} for s in supported_species(config)
+        ],
         "annotation_elements": list(config.bed_elements_names),
         "predicted_center_fraction": config.keep_target_center_fraction,
     }
 
 
-def list_track_ids(repo_id: str, species: str | None, contains: str | None, limit: int, offset: int) -> dict:
+def list_track_ids(
+    repo_id: str, species: str | None, contains: str | None, limit: int, offset: int
+) -> dict:
     config = _post_config(repo_id)
     name = (species or DEFAULT_SPECIES).strip().lower()
     if name not in supported_species(config):
-        raise ValueError(f"Unknown species {species!r}. Supported species: {supported_species(config)}")
+        raise ValueError(
+            f"Unknown species {species!r}. Supported species: {supported_species(config)}"
+        )
     ids = list(config.bigwigs_per_species.get(name, []))
     if contains:
         ids = [t for t in ids if contains.lower() in t.lower()]
     limit = max(1, min(int(limit), 1000))
     offset = max(0, int(offset))
-    return {"species": name, "total": len(ids), "offset": offset, "track_ids": ids[offset : offset + limit]}
+    return {
+        "species": name,
+        "total": len(ids),
+        "offset": offset,
+        "track_ids": ids[offset : offset + limit],
+    }
 
 
 def center_region(padded_len: int, seq_len: int, keep_fraction: float) -> tuple[int, int, int]:
@@ -474,7 +509,9 @@ def check_output_size(num_positions: int, num_columns: int, bin_size: int) -> No
         )
 
 
-def _post_forward_single(repo_id: str, sequence: str, species: str | None, pad_multiple: int, output_track: bool):
+def _post_forward_single(
+    repo_id: str, sequence: str, species: str | None, pad_multiple: int, output_track: bool
+):
     tokenizer, model = load(repo_id)
     if not is_post_trained(model):
         _post_config(repo_id)  # raises the "needs a post-trained checkpoint" error
@@ -488,7 +525,12 @@ def _post_forward_single(repo_id: str, sequence: str, species: str | None, pad_m
     with torch.no_grad():
         out = _forward(model, batch, species, output_track=output_track)
     lo, hi = region_start - crop_start, region_end - crop_start
-    meta = {"species": species, "sequence_length": len(seq), "region_start": region_start, "region_end": region_end}
+    meta = {
+        "species": species,
+        "sequence_length": len(seq),
+        "region_start": region_start,
+        "region_end": region_end,
+    }
     return model, out, (lo, hi), meta
 
 
@@ -501,14 +543,18 @@ def annotate(
     bin_size: int = 1,
 ) -> dict:
     """Per-position probability of each genomic element (softmax over absent/present, as InstaDeep's pipeline)."""
-    names =list(_post_config(repo_id).bed_elements_names)
+    names = list(_post_config(repo_id).bed_elements_names)
     wanted = names if not elements else elements
     unknown = [e for e in wanted if e not in names]
     if unknown:
         raise ValueError(f"Unknown element(s) {unknown}. Available: {names}")
-    model, out, (lo, hi), meta = _post_forward_single(repo_id, sequence, species, pad_multiple, output_track=False)
+    _model, out, (lo, hi), meta = _post_forward_single(
+        repo_id, sequence, species, pad_multiple, output_track=False
+    )
     check_output_size(hi - lo, len(wanted), bin_size)
-    probs = torch.softmax(out.bed_tracks_logits[0, lo:hi].float(), dim=-1)[..., 1]  # (positions, elements)
+    probs = torch.softmax(out.bed_tracks_logits[0, lo:hi].float(), dim=-1)[
+        ..., 1
+    ]  # (positions, elements)
     cols = [names.index(e) for e in wanted]
     binned = bin_mean(probs[:, cols].cpu().numpy(), bin_size)
     return {
@@ -538,11 +584,17 @@ def predict_tracks(
     available = list(config.bigwigs_per_species.get(name, []))
     if name in config.species_to_token_id and not available:
         with_tracks = sorted(s for s, t in config.bigwigs_per_species.items() if t)
-        raise ValueError(f"Species '{name}' has no predicted tracks in this model. Species with tracks: {with_tracks}")
+        raise ValueError(
+            f"Species '{name}' has no predicted tracks in this model. Species with tracks: {with_tracks}"
+        )
     unknown = [t for t in track_ids if t not in available]
     if unknown and available:
-        raise ValueError(f"Unknown track id(s) for {name}: {unknown[:10]}. Use list_tracks(species='{name}') to search.")
-    model, out, (lo, hi), meta = _post_forward_single(repo_id, sequence, species, pad_multiple, output_track=True)
+        raise ValueError(
+            f"Unknown track id(s) for {name}: {unknown[:10]}. Use list_tracks(species='{name}') to search."
+        )
+    _model, out, (lo, hi), meta = _post_forward_single(
+        repo_id, sequence, species, pad_multiple, output_track=True
+    )
     check_output_size(hi - lo, len(track_ids), bin_size)
     cols = [available.index(t) for t in track_ids]
     signal = out.bigwig_tracks_logits[0, lo:hi][:, cols].float().cpu().numpy()

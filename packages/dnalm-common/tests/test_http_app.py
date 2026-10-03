@@ -1,9 +1,8 @@
 """Exercises the shared auth/health wiring in-process (no real socket, no model weights)."""
 
+from dnalm_common.http_app import build_http_app, register_health_route
 from mcp.server.mcpserver import MCPServer
 from starlette.testclient import TestClient
-
-from dnalm_common.http_app import build_http_app, register_health_route
 
 
 def _make_app(host: str, path: str, monkeypatch, token: str | None):
@@ -13,7 +12,13 @@ def _make_app(host: str, path: str, monkeypatch, token: str | None):
         monkeypatch.delenv("TEST_AUTH_TOKEN", raising=False)
     else:
         monkeypatch.setenv("TEST_AUTH_TOKEN", token)
-    return build_http_app(mcp, host, path, auth_token_env="TEST_AUTH_TOKEN", logger=__import__("logging").getLogger("test"))
+    return build_http_app(
+        mcp,
+        host,
+        path,
+        auth_token_env="TEST_AUTH_TOKEN",
+        logger=__import__("logging").getLogger("test"),
+    )
 
 
 def test_health_is_open_without_token(monkeypatch):

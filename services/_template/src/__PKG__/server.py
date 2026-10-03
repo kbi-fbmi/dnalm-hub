@@ -39,7 +39,8 @@ def list_available_checkpoints() -> list[dict]:
     return [
         {
             "name": alias,
-            "description": spec.notes or f"__NAME__ {spec.params}, {spec.max_tokens}-token context.",
+            "description": spec.notes
+            or f"__NAME__ {spec.params}, {spec.max_tokens}-token context.",
             "repo_id": spec.repo_id,
             "revision": spec.revision,
             "params": spec.params,
@@ -72,8 +73,15 @@ def embed_sequence(
     m = resolve_model(checkpoint)
     is_batch = isinstance(sequence, list)
     sequences = sequence if is_batch else [sequence]
-    embeddings, layer_idx, n_layers = inference.compute_embeddings(m, sequences, layer_name, pooling)
-    base = {"checkpoint": m.repo_id, "layer_name": layer_idx, "num_layers": n_layers, "pooling": pooling}
+    embeddings, layer_idx, n_layers = inference.compute_embeddings(
+        m, sequences, layer_name, pooling
+    )
+    base = {
+        "checkpoint": m.repo_id,
+        "layer_name": layer_idx,
+        "num_layers": n_layers,
+        "pooling": pooling,
+    }
     if is_batch:
         return {**base, "sequences": sequences, "embeddings": [e.tolist() for e in embeddings]}
     return {**base, "sequence": sequences[0], "embedding": embeddings[0].tolist()}
@@ -93,7 +101,10 @@ def score_snp(
     service; `method` says how the score was computed.
     """
     m = resolve_model(checkpoint)
-    return {"checkpoint": m.repo_id, **inference.score_variant(m, sequence, alternative_allele, position=position)}
+    return {
+        "checkpoint": m.repo_id,
+        **inference.score_variant(m, sequence, alternative_allele, position=position),
+    }
 
 
 @mcp.tool()

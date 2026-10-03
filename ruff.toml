@@ -1,0 +1,15 @@
+# Ruff config for every package and service (no pyproject.toml here sets [tool.ruff],
+# so ruff picks this file up from any subdirectory). Run via `make lint` / `make format`;
+# the ruff version is pinned in the Makefile.
+target-version = "py311"
+line-length = 100
+
+[lint]
+# The code already marks deliberate broad excepts with `# noqa: BLE001`.
+extend-select = ["BLE"]
+# `from x import y as y` is the explicit re-export idiom (PEP 484), used on purpose.
+ignore = ["PLC0414"]
+
+[lint.per-file-ignores]
+# `__PKG__` is a placeholder that `make new-service` renames.
+"services/_template/src/__PKG__/*" = ["N999"]

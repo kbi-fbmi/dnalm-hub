@@ -47,7 +47,12 @@ class Ntv3McpClient(GenericMcpClient):
         offset: int = 0,
     ) -> dict[str, Any]:
         """Track ids (ENCODE ENCSR..., FANTOM5 CNhs..., GEO GSM..., GTEx, SRA ...) usable in `predict_tracks`, paginated."""
-        arguments: dict[str, Any] = {"species": species, "checkpoint": checkpoint, "limit": limit, "offset": offset}
+        arguments: dict[str, Any] = {
+            "species": species,
+            "checkpoint": checkpoint,
+            "limit": limit,
+            "offset": offset,
+        }
         if contains:
             arguments["contains"] = contains
         return self._call_structured("list_tracks", arguments)
@@ -61,7 +66,12 @@ class Ntv3McpClient(GenericMcpClient):
         bin_size: int = 1,
     ) -> dict[str, Any]:
         """Per-position probabilities of genomic elements (exon, intron, promoter, ...) in the central window."""
-        arguments: dict[str, Any] = {"sequence": sequence, "checkpoint": checkpoint, "species": species, "bin_size": bin_size}
+        arguments: dict[str, Any] = {
+            "sequence": sequence,
+            "checkpoint": checkpoint,
+            "species": species,
+            "bin_size": bin_size,
+        }
         if elements:
             arguments["elements"] = elements
         return self._call_structured("annotate_sequence", arguments)
@@ -77,5 +87,11 @@ class Ntv3McpClient(GenericMcpClient):
         """Predicted experimental signal for the given track ids in the central window."""
         return self._call_structured(
             "predict_tracks",
-            {"sequence": sequence, "track_ids": track_ids, "checkpoint": checkpoint, "species": species, "bin_size": bin_size},
+            {
+                "sequence": sequence,
+                "track_ids": track_ids,
+                "checkpoint": checkpoint,
+                "species": species,
+                "bin_size": bin_size,
+            },
         )

@@ -1,5 +1,4 @@
 import pytest
-
 from dnalm_common.validation import validate_sequence
 
 

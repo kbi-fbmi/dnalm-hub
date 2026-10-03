@@ -60,8 +60,12 @@ def log_likelihood(m: ResolvedModel, sequence: str) -> float:
     raise NotImplementedError("log_likelihood() is not implemented yet for __NAME__.")
 
 
-def score_variant(m: ResolvedModel, sequence: str, alt_allele: str, position: int | None = None) -> dict:
-    return score_snp_whole_sequence(sequence, alt_allele, lambda s: log_likelihood(m, s), position=position)
+def score_variant(
+    m: ResolvedModel, sequence: str, alt_allele: str, position: int | None = None
+) -> dict:
+    return score_snp_whole_sequence(
+        sequence, alt_allele, lambda s: log_likelihood(m, s), position=position
+    )
 
 
 def compare_sequences(m: ResolvedModel, sequence_a: str, sequence_b: str, layer: str | int | None):

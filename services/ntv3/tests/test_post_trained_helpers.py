@@ -5,7 +5,6 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 import torch
-
 from ntv3_mcp.inference import (
     POST_MODEL_TYPE,
     bin_mean,
@@ -18,7 +17,9 @@ from ntv3_mcp.inference import (
 
 def _model(model_type):
     species = {"<pad>": 1, "<unk>": 0, "human": 6, "mouse": 7}
-    return SimpleNamespace(config=SimpleNamespace(model_type=model_type, species_to_token_id=species))
+    return SimpleNamespace(
+        config=SimpleNamespace(model_type=model_type, species_to_token_id=species)
+    )
 
 
 def test_post_model_defaults_to_human():

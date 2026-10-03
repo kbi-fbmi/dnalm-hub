@@ -19,10 +19,16 @@ from ntv3_mcp_client import Ntv3McpClient
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Call ntv3-mcp embed_sequence over HTTP MCP.")
-    parser.add_argument("--server", default="http://kbi-cs2.fbmi.cvut.cz:8000", help="Base server URL")
+    parser.add_argument(
+        "--server", default="http://kbi-cs2.fbmi.cvut.cz:8000", help="Base server URL"
+    )
     parser.add_argument("--sequence", default="ACGTACGTACGT", help="DNA sequence (A/C/G/T/N)")
-    parser.add_argument("--checkpoint", default="100m-pre", help="Checkpoint alias or full HF repo id")
-    parser.add_argument("--token", default=os.getenv("MCP_AUTH_TOKEN"), help="Bearer token for /mcp")
+    parser.add_argument(
+        "--checkpoint", default="100m-pre", help="Checkpoint alias or full HF repo id"
+    )
+    parser.add_argument(
+        "--token", default=os.getenv("MCP_AUTH_TOKEN"), help="Bearer token for /mcp"
+    )
     args = parser.parse_args()
 
     with Ntv3McpClient(base_url=args.server, auth_token=args.token) as client:

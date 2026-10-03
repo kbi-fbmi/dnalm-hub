@@ -1,7 +1,6 @@
 """Pure-logic tests for the context-length guard (no model weights)."""
 
 import pytest
-
 from ntv2_mcp.inference import check_token_lengths, max_tokens
 from ntv2_mcp.registry import ResolvedModel, resolve_model
 

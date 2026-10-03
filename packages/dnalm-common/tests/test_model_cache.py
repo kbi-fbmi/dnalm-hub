@@ -1,7 +1,6 @@
 """Tests LRUModelCache's eviction bookkeeping with cheap fake "models" (no torch/GPU needed)."""
 
 import pytest
-
 from dnalm_common.model_cache import LRUModelCache
 
 

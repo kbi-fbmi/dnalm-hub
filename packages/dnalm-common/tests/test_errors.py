@@ -3,10 +3,9 @@
 import asyncio
 
 import pytest
+from dnalm_common.errors import user_errors_as_tool_errors
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
-
-from dnalm_common.errors import user_errors_as_tool_errors
 
 mcp = MCPServer("errors-test")
 

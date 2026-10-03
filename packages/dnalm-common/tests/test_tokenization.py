@@ -1,8 +1,10 @@
 """No-download tests for the single-nucleotide-tokenizer guard."""
 
 import pytest
-
-from dnalm_common.tokenization import assert_single_nucleotide_tokenizer, is_single_nucleotide_tokenizer
+from dnalm_common.tokenization import (
+    assert_single_nucleotide_tokenizer,
+    is_single_nucleotide_tokenizer,
+)
 
 
 class _FakeTokenizer:

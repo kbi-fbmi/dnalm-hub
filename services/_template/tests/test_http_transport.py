@@ -1,9 +1,8 @@
 """Exercises the HTTP transport's auth/health wiring in-process (no real socket,
 no model weights needed)."""
 
-from starlette.testclient import TestClient
-
 from __PKG__.server import _build_http_app
+from starlette.testclient import TestClient
 
 
 def test_health_is_open_without_token(monkeypatch):

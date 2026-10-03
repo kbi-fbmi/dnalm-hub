@@ -22,7 +22,7 @@ which owns allele validation and the response shape.
 
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 import torch
 
@@ -46,7 +46,9 @@ def apply_snp(
     if position is None:
         position = len(seq) // 2
     if not (0 <= position < len(seq)):
-        raise ValueError(f"position must be within [0, {len(seq) - 1}] for a sequence of length {len(seq)}.")
+        raise ValueError(
+            f"position must be within [0, {len(seq) - 1}] for a sequence of length {len(seq)}."
+        )
     alt = alt_allele.strip().upper() if isinstance(alt_allele, str) else ""
     if len(alt) != 1 or alt not in valid_nucleotides:
         raise ValueError(

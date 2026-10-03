@@ -12,7 +12,8 @@ needs to fix the request. `user_errors_as_tool_errors` re-raises them as
 from __future__ import annotations
 
 import functools
-from typing import Callable, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
 from mcp.server.mcpserver.exceptions import ToolError
 
