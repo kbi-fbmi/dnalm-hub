@@ -1,0 +1,56 @@
+[project]
+name = "dnabert2-mcp"
+version = "0.1.0"
+description = "MCP server exposing DNABERT-2 (117M, BPE, ALiBi) genomic language model: DNA embeddings and zero-shot variant scoring."
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Radim Krupička" }]
+dependencies = [
+    "mcp[cli]>=2.0.0",
+    # <5: the remote bert_layers.py breaks on 5.x -- the remote BertConfig lacks
+    # attributes 5.x expects (`is_decoder`), and 5.x instantiates models on the
+    # meta device, where the remote ALiBi table construction crashes. Verified
+    # working: 4.57.6 (newest 4.x), with the config loaded as transformers'
+    # own BertConfig (see inference.load).
+    "transformers>=4.57,<5",
+    # >=2.6: transformers refuses torch.load of .bin weights on older torch, and
+    # DNABERT-2 ships only pytorch_model.bin.
+    "torch>=2.6",
+    "numpy>=1.26",
+    # imported unconditionally by the remote bert_layers.py
+    "einops>=0.7",
+    "dnalm-common",
+]
+
+[project.scripts]
+dnabert2-mcp = "dnabert2_mcp.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dnabert2_mcp"]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+# CPU torch wheel on Linux for local dev/tests; the GPU Dockerfile drops this
+# override with --no-sources-package torch.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+dnalm-common = { path = "../../packages/dnalm-common", editable = true }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+# No triton: torch's CUDA wheels depend on it, but DNABERT-2's remote code then
+# picks its bundled Triton flash-attention kernel, written for the pre-2.0
+# Triton API (`tl.dot(..., trans_b=True)`), which fails on current releases.
+# Without the package the remote code falls back to plain PyTorch attention
+# (inference.load additionally forces that path). The never-true marker drops
+# triton from the lock for every platform.
+[tool.uv]
+override-dependencies = ["triton; sys_platform == 'never'"]
