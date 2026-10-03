@@ -59,23 +59,31 @@ checkpoint. The `@user_errors_as_tool_errors` decorator passes these messages to
 the client; any other exception reaches the client only as "Error executing tool".
 Never truncate silently.
 
-## 4. Verify on the GPU
+## 4. Add it to compose.yaml
 
-Unit tests never download models. Before you deploy, do a real smoke test:
+`compose.yaml` in the repo root is the single source of truth for images and
+deployment (`make build` builds from it as well). Copy an existing block and give it:
+
+- `image: <name>-mcp:gpu` and `dockerfile: services/<name>/Dockerfile`,
+- a new host port,
+- its own `<name>-hf-cache` volume.
+
+## 5. Verify on the GPU
+
+Unit tests never download models. Before you rely on the service, do a real smoke test:
 
 ```bash
-make build S=hyenadna
-docker run --rm --gpus all -p 8010:8000 -e MCP_AUTH_TOKEN=test hyenadna-mcp:gpu
+make build S=hyenadna                # = docker compose build hyenadna
+docker compose up -d hyenadna
+docker compose logs -f hyenadna
 ```
 
 Then run `examples/model_overview.ipynb` against it. Add the service to `SERVICES`
 in the notebook's first code cell.
 
-## 5. Deploy
+## 6. Before you commit
 
-Add a block to `compose.yaml` in the repo root. Copy an existing one and give it:
-
-- a new host port,
-- its own `<name>-hf-cache` volume.
-
-Then run `docker compose up -d --build`.
+```bash
+make format                          # ruff autofix + format (config: ruff.toml)
+make lint test
+```

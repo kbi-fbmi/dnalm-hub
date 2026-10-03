@@ -56,7 +56,9 @@ docker compose up -d --build     # start / update all services
 docker compose ps                # status;  docker compose logs -f ntv2;  docker compose down
 
 # develop (the Makefile loops over the separate uv projects)
+make sync                        # create venvs (make sync CLEAN=1 after moving/renaming the repo)
 make test                        # every package and service (or: make test S=ntv2)
+make lint                        # ruff check + format check (make format fixes; config: ruff.toml)
 make lock                        # after editing a pyproject.toml
 make new-service NAME=hyenadna   # add a model family -> docs/adding-a-model.md
 ```
