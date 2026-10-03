@@ -1,7 +1,8 @@
 """Example: send a DNA sequence to ntv3-mcp and print embedding metadata.
 
-Usage:
-    python examples/embed_sequence_example.py --server http://kbi-cs2.fbmi.cvut.cz:8000 --sequence ACGTACGTACGT
+Usage (from the repo root; uses the ntv3 service's environment for `ntv3_mcp_client`):
+    uv run --project services/ntv3 python examples/embed_sequence_example.py \
+        --server http://kbi-cs2.fbmi.cvut.cz:8000 --sequence ACGTACGTACGT
 
 Optional auth token:
     set MCP_AUTH_TOKEN=...   (Windows)

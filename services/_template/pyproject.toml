@@ -1,0 +1,39 @@
+[project]
+name = "__NAME__-mcp"
+version = "0.1.0"
+description = "MCP server exposing the __NAME__ genomic language model(s)."
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+    "mcp[cli]>=2.0.0",
+    # TODO: pin what this model's (remote) code actually needs; each service has
+    # its own environment, so this can differ from the other services.
+    "transformers>=4.57",
+    "torch>=2.6",
+    "numpy>=1.26",
+    "dnalm-common",
+]
+
+[project.scripts]
+__NAME__-mcp = "__PKG__.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/__PKG__"]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+# CPU torch wheel on Linux for local dev/tests; the GPU Dockerfile drops this
+# override with --no-sources-package torch.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+dnalm-common = { path = "../../packages/dnalm-common", editable = true }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

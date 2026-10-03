@@ -1,0 +1,43 @@
+[project]
+name = "ntv2-mcp"
+version = "0.1.0"
+description = "MCP server exposing InstaDeep's Nucleotide Transformer v2 (NTv2) genomic language models: DNA embeddings and zero-shot variant scoring."
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Radim Krupička" }]
+dependencies = [
+    "mcp[cli]>=2.0.0",
+    # NTv2's trust_remote_code modeling_esm.py imports
+    # transformers.pytorch_utils.find_pruneable_heads_and_indices, removed in 5.x.
+    # This is why each model family has its own environment (ntv3-mcp runs 5.x).
+    "transformers>=4.57,<5",
+    # >=2.6: transformers refuses torch.load of .bin weights on older torch, and
+    # the 250m / 2.5B checkpoints ship only pytorch_model.bin.
+    "torch>=2.6",
+    "numpy>=1.26",
+    "dnalm-common",
+]
+
+[project.scripts]
+ntv2-mcp = "ntv2_mcp.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ntv2_mcp"]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+# Same CPU-wheel-on-Linux override as services/ntv3; the GPU Dockerfile
+# drops it with --no-sources-package torch to get the CUDA build.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+dnalm-common = { path = "../../packages/dnalm-common", editable = true }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
