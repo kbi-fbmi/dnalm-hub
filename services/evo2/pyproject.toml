@@ -1,0 +1,42 @@
+[project]
+name = "evo2-mcp"
+version = "0.1.0"
+description = "MCP server exposing Arc Institute's Evo 2 causal DNA language model (community pure-PyTorch transformers port): embeddings, zero-shot variant scoring, and sequence generation."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+    "mcp[cli]>=2.0.0",
+    # The port's remote code needs the transformers 5.x hybrid Cache API
+    # (cache_utils.LinearAttentionLayer) for cached generation; it was written
+    # against 5.17. <6: the remote code relies on internals a major may change.
+    "transformers>=5.17,<6",
+    "torch>=2.6",
+    "numpy>=1.26",
+    "dnalm-common",
+    "safetensors>=0.4",
+]
+
+[project.scripts]
+evo2-mcp = "evo2_mcp.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/evo2_mcp"]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+# CPU torch wheel on Linux for local dev/tests; the GPU Dockerfile drops this
+# override with --no-sources-package torch.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+dnalm-common = { path = "../../packages/dnalm-common", editable = true }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
