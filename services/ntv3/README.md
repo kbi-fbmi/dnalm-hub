@@ -100,7 +100,7 @@ See [examples/mcp_client_config.json](examples/mcp_client_config.json):
   "mcpServers": {
     "ntv3": {
       "command": "uv",
-      "args": ["run", "--directory", "/absolute/path/to/ntv3-mcp", "ntv3-mcp"]
+      "args": ["run", "--directory", "/absolute/path/to/dnalm-hub/services/ntv3", "ntv3-mcp"]
     }
   }
 }
