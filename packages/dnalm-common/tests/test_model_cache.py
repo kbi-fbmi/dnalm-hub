@@ -69,3 +69,30 @@ def test_eviction_moves_model_off_device():
 def test_rejects_non_positive_capacity():
     with pytest.raises(ValueError):
         LRUModelCache(max_entries=0)
+
+
+def test_idle_entries_are_dropped(monkeypatch):
+    clock = [1000.0]
+    monkeypatch.setattr("dnalm_common.model_cache.time.monotonic", lambda: clock[0])
+    cache = LRUModelCache(max_entries=2, idle_unload_seconds=60)
+    cache._start_reaper = lambda: None  # driven by hand below
+    a = cache.get_or_load("a", lambda: _loader("a"))
+    clock[0] += 50
+    cache.get_or_load("b", lambda: _loader("b"))
+    clock[0] += 20  # a idle 70 s, b idle 20 s
+    assert cache.evict_idle() == ["a"]
+    assert "a" not in cache and "b" in cache
+    assert a[1].device == "cuda"  # not moved: an in-flight request may still use it
+
+
+def test_idle_unload_off_by_default(monkeypatch):
+    monkeypatch.delenv("DNALM_IDLE_UNLOAD_SECONDS", raising=False)
+    cache = LRUModelCache(max_entries=2)
+    cache.get_or_load("a", lambda: _loader("a"))
+    assert cache.evict_idle() == []
+    assert cache._reaper is None
+
+
+def test_idle_unload_from_env(monkeypatch):
+    monkeypatch.setenv("DNALM_IDLE_UNLOAD_SECONDS", "600")
+    assert LRUModelCache()._idle_unload_seconds == 600

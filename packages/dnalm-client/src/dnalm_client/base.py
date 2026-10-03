@@ -223,7 +223,7 @@ class GenericMcpClient:
         self,
         sequence: str | list[str],
         checkpoint: str = "100m-pre",
-        layer_name: str = "last",
+        layer_name: str | None = None,
         pooling: str = "mean",
         species: str | None = None,
     ) -> dict[str, Any]:
@@ -231,14 +231,17 @@ class GenericMcpClient:
 
         `sequence` may be a single string, or a list of strings to embed as a
         batch (see `embed_sequence` on the server for the resulting shape).
-        `species` is only for species-conditioned models (NTv3 post-trained).
+        `layer_name` defaults to the server's choice ("last", or e.g. an
+        intermediate layer on Evo 2). `species` is only for species-conditioned
+        models (NTv3 post-trained).
         """
-        arguments = {
+        arguments: dict[str, Any] = {
             "sequence": sequence,
             "checkpoint": checkpoint,
-            "layer_name": layer_name,
             "pooling": pooling,
         }
+        if layer_name is not None:
+            arguments["layer_name"] = layer_name
         return self._call_structured("embed_sequence", _with_species(arguments, species))
 
     def score_snp(
@@ -291,37 +294,46 @@ class GenericMcpClient:
         sequence_a: str,
         sequence_b: str,
         checkpoint: str = "100m-pre",
-        layer_name: str = "last",
+        layer_name: str | None = None,
         species: str | None = None,
     ) -> dict[str, Any]:
-        """Cosine similarity between the mean-pooled embeddings of two sequences."""
-        arguments = {
+        """Cosine similarity between the mean-pooled embeddings of two sequences.
+
+        `layer_name` defaults to the server's choice, as in `embed_sequence`.
+        """
+        arguments: dict[str, Any] = {
             "sequence_a": sequence_a,
             "sequence_b": sequence_b,
             "checkpoint": checkpoint,
-            "layer_name": layer_name,
         }
+        if layer_name is not None:
+            arguments["layer_name"] = layer_name
         return self._call_structured("compare_sequences", _with_species(arguments, species))
 
     def generate_sequence(
         self,
         prompt: str,
-        checkpoint: str = "100m-pre",
+        checkpoint: str | None = None,
         max_new_tokens: int = 50,
         temperature: float = 1.0,
-        top_k: int = 4,
+        top_k: int | None = None,
     ) -> dict[str, Any]:
-        """Autoregressively sample a continuation. Only available on causal (generative) backends."""
-        return self._call_structured(
-            "generate_sequence",
-            {
-                "prompt": prompt,
-                "checkpoint": checkpoint,
-                "max_new_tokens": max_new_tokens,
-                "temperature": temperature,
-                "top_k": top_k,
-            },
-        )
+        """Autoregressively sample a continuation. Only available on causal (generative) backends.
+
+        `checkpoint` and `top_k` are sent only when given, so each server's own
+        defaults apply (vocabularies differ: 4 bases for HyenaDNA/Evo2, 4096 6-mers
+        for GENERator).
+        """
+        arguments: dict[str, Any] = {
+            "prompt": prompt,
+            "max_new_tokens": max_new_tokens,
+            "temperature": temperature,
+        }
+        if checkpoint is not None:
+            arguments["checkpoint"] = checkpoint
+        if top_k is not None:
+            arguments["top_k"] = top_k
+        return self._call_structured("generate_sequence", arguments)
 
     def _post_mcp_sse_json(
         self,
