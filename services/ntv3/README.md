@@ -131,13 +131,16 @@ From the **repo root**:
 
 ```bash
 cp .env.example .env   # fill in HF_TOKEN (required) and MCP_AUTH_TOKEN (recommended)
+mkdir -p models        # model weights on the host (or set MODELS_DIR in .env)
 docker compose up -d --build   # GPU: all services (compose.yaml)
 curl http://localhost:8000/health   # -> ok
 ```
 
 This builds the GPU image ([Dockerfile](Dockerfile)) and starts it with
-`MCP_TRANSPORT=http` (already the image's default) on port 8000. It also keeps a
-named volume, so downloaded checkpoints survive container restarts. Without
+`MCP_TRANSPORT=http` (already the image's default) on port 8000. Downloaded
+checkpoints are stored on the host in `MODELS_DIR` (default `./models`, create it
+first with `mkdir -p models`; see `.env.example`), so they survive container
+restarts and rebuilds and are shared with the other services. Without
 Compose, the equivalent is (again from the repo root, since the build needs
 `packages/`):
 
@@ -145,7 +148,7 @@ Compose, the equivalent is (again from the repo root, since the build needs
 docker build -f services/ntv3/Dockerfile -t ntv3-mcp:gpu .   # or: make build S=ntv3
 docker run -d --gpus all --name ntv3-mcp -p 8000:8000 \
   -e HF_TOKEN=hf_xxx -e MCP_AUTH_TOKEN=change-me \
-  -v ntv3-hf-cache:/home/appuser/.cache/huggingface \
+  -v "$PWD/models":/models \
   ntv3-mcp:gpu
 ```
 
@@ -206,7 +209,7 @@ Set via environment variables (in the client's `env` block, docker-compose's
 | `NTV3_DTYPE` | `float32` | One of `float32`, `bfloat16`, `float16`. `bfloat16` needs a supported GPU. |
 | `NTV3_MAX_RESIDENT_MODELS` | `2` | How many checkpoints stay loaded (LRU; evicted ones free their VRAM). |
 | `NTV3_MAX_OUTPUT_VALUES` | `500000` | Cap on numbers returned by `annotate_sequence`/`predict_tracks`; above it the error says which `bin_size` to use. |
-| `HF_HOME` | `~/.cache/huggingface` | Where model weights are cached. |
+| `HF_HOME` | `~/.cache/huggingface` (`/models` in the Docker images) | Where model weights are cached. |
 | `HF_TOKEN` | unset | **Required** for the gated NTv3 repos unless you've already run `huggingface-cli login`. See "Getting access" above. |
 
 ## Model registry

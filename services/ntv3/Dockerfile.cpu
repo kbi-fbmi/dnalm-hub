@@ -11,7 +11,7 @@
 #
 # Build:  docker build -f services/ntv3/Dockerfile.cpu -t ntv3-mcp:cpu .
 # Run:    docker run --rm -p 8000:8000 -e HF_TOKEN=hf_xxx -e MCP_AUTH_TOKEN=change-me \
-#           -v ntv3-hf-cache:/home/appuser/.cache/huggingface ntv3-mcp:cpu
+#           -v "$PWD/models":/models ntv3-mcp:cpu
 
 FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim AS builder
 
@@ -49,7 +49,7 @@ COPY --from=builder /app/services/ntv3 /app/services/ntv3
 
 ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONUNBUFFERED=1 \
-    HF_HOME=/home/appuser/.cache/huggingface \
+    HF_HOME=/models \
     MCP_TRANSPORT=http \
     MCP_HOST=0.0.0.0 \
     MCP_PORT=8000 \
@@ -57,11 +57,11 @@ ENV PATH="/app/.venv/bin:${PATH}" \
     NTV3_DEVICE=cpu \
     NTV3_DTYPE=float32
 
-RUN mkdir -p "$HF_HOME" && chown -R appuser:appuser /app /home/appuser
+RUN mkdir -p "$HF_HOME" && chown -R appuser:appuser /app /home/appuser "$HF_HOME"
 USER appuser
 
 EXPOSE 8000
-VOLUME ["/home/appuser/.cache/huggingface"]
+VOLUME ["/models"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
     CMD ["python", "-c", "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.environ.get('MCP_PORT','8000') + '/health', timeout=3)"]

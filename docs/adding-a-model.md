@@ -65,8 +65,10 @@ Never truncate silently.
 deployment (`make build` builds from it as well). Copy an existing block and give it:
 
 - `image: <name>-mcp:gpu` and `dockerfile: services/<name>/Dockerfile`,
-- a new host port,
-- its own `<name>-hf-cache` volume.
+- a new host port.
+
+The model-weights mount (`MODELS_DIR`, shared HuggingFace cache) comes from the
+`x-service` anchor, so the new block needs no volume of its own.
 
 ## 5. Verify on the GPU
 

@@ -5,7 +5,7 @@
 #
 # Build:  docker build -f services/__NAME__/Dockerfile -t __NAME__-mcp:gpu .   (or: make build S=__NAME__)
 # Run:    docker run --rm --gpus all -p 80XX:8000 -e MCP_AUTH_TOKEN=change-me \
-#           -v __NAME__-hf-cache:/home/appuser/.cache/huggingface __NAME__-mcp:gpu
+#           -v "$PWD/models":/models __NAME__-mcp:gpu
 #
 # Add -e HF_TOKEN=hf_xxx if the checkpoints are gated on HuggingFace.
 
@@ -45,7 +45,7 @@ RUN if getent passwd 1000 >/dev/null; then \
 # ("Failed to find C compiler"). Disable that and use the stock CUDA kernels.
 ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONUNBUFFERED=1 \
-    HF_HOME=/home/appuser/.cache/huggingface \
+    HF_HOME=/models \
     MCP_TRANSPORT=http \
     MCP_HOST=0.0.0.0 \
     MCP_PORT=8000 \
@@ -54,11 +54,11 @@ ENV PATH="/app/.venv/bin:${PATH}" \
     __ENV___DTYPE=float32 \
     TORCH_DISABLE_NATIVE_JIT=1
 
-RUN mkdir -p "$HF_HOME" && chown -R appuser:$(id -g appuser) /home/appuser
+RUN mkdir -p "$HF_HOME" && chown -R appuser:$(id -g appuser) /home/appuser "$HF_HOME"
 USER appuser
 
 EXPOSE 8000
-VOLUME ["/home/appuser/.cache/huggingface"]
+VOLUME ["/models"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD ["python3", "-c", "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.environ.get('MCP_PORT','8000') + '/health', timeout=3)"]

@@ -34,7 +34,7 @@ From the **repo root** (the build needs `packages/`):
 ```bash
 make build S=ntv2      # = docker build -f services/ntv2/Dockerfile -t ntv2-mcp:gpu .
 docker run --rm --gpus all -p 8001:8000 -e MCP_AUTH_TOKEN=change-me \
-  -v ntv2-hf-cache:/home/appuser/.cache/huggingface ntv2-mcp:gpu
+  -v "$PWD/models":/models ntv2-mcp:gpu
 ```
 
 NTv2 weights are public (no `HF_TOKEN` needed) but **non-commercial** licensed.

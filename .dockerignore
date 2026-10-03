@@ -22,3 +22,6 @@ docs
 examples
 scripts
 services/_template
+
+# Model weights (MODELS_DIR default, see compose.yaml)
+models
