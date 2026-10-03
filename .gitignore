@@ -27,3 +27,6 @@ wheels/
 
 # Model weights (MODELS_DIR default, see compose.yaml)
 /models/
+
+# Claude Code local state (agent worktrees, settings)
+/.claude/

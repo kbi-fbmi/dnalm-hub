@@ -3,6 +3,8 @@
 # the ruff version is pinned in the Makefile.
 target-version = "py311"
 line-length = 100
+# Claude Code agent worktrees (full repo copies) live under .claude/worktrees.
+extend-exclude = [".claude"]
 
 [lint]
 # The code already marks deliberate broad excepts with `# noqa: BLE001`.
