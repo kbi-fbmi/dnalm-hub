@@ -41,7 +41,7 @@ If two services need the same new helper, add it there once, with tests.
 ## 3. Choose the tool set
 
 All services share tool names, the `checkpoint` parameter and the response shapes.
-Clients and the planned `/v1/embeddings` gateway rely on that.
+Clients and the OpenAI-compatible gateway (`services/gateway`) rely on that.
 
 | Tool | Register when |
 |---|---|
@@ -66,6 +66,9 @@ deployment (`make build` builds from it as well). Copy an existing block and giv
 
 - `image: <name>-mcp:gpu` and `dockerfile: services/<name>/Dockerfile`,
 - a new host port.
+
+Then add `<name>=http://<name>:8000` to the gateway's `GATEWAY_BACKENDS` (and to its
+`depends_on`), so `POST /v1/embeddings` with `model="<name>/<checkpoint>"` works.
 
 The model-weights mount (`MODELS_DIR`, shared HuggingFace cache) comes from the
 `x-service` anchor, so the new block needs no volume of its own.

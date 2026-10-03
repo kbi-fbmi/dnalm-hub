@@ -9,6 +9,7 @@ between models by changing only the URL and the `checkpoint`.
 |---|---|---|---|
 | [`services/ntv3`](services/ntv3) | InstaDeep Nucleotide Transformer v3 (1 token per base) | 8000 | running |
 | [`services/ntv2`](services/ntv2) | InstaDeep Nucleotide Transformer v2 + v1 2.5B (6-mer tokens) | 8001 | running |
+| [`services/gateway`](services/gateway) | OpenAI-compatible `/v1/embeddings` over all of the above | 8080 | running |
 | `services/dnabert2` | DNABERT-2 (BPE) | | planned |
 | `services/hyenadna` | HyenaDNA (causal, up to 1M context) | | planned |
 | `services/evo2t` | Evo2 (community PyTorch port, experimental) | | planned |
@@ -19,6 +20,11 @@ and `score_snp`. Model-specific tools: `predict_masked_positions` (NTv3), genome
 track prediction for species-conditioned NTv3 `post` checkpoints (`annotate_sequence`, `predict_tracks`,
 `list_species`, `list_tracks`), and `generate_sequence` (causal models, planned). Call model-specific
 tools from Python with `client.call("tool_name", **arguments)`.
+
+**OpenAI API:** the gateway embeds DNA with any model through the standard OpenAI
+embeddings API, e.g. `OpenAI(base_url="http://localhost:8080/v1", api_key=MCP_AUTH_TOKEN)
+.embeddings.create(model="ntv3/100m-pre", input=["ACGT..."])`. See
+[services/gateway](services/gateway).
 
 **Try it:** [examples/model_overview.ipynb](examples/model_overview.ipynb) asks each
 service for its models, picks one per type, and tests embeddings (single, batch and
@@ -33,11 +39,12 @@ packages/
 services/
   ntv3/  ntv2/          one directory per model family: pyproject.toml, uv.lock,
                         Dockerfile, src/<name>_mcp/{registry,inference,server}.py, tests/
+  gateway/              OpenAI-compatible /v1/embeddings that routes to the model services
   _template/            skeleton used by `make new-service`
 docs/                   adding-a-model.md
 examples/               notebook and scripts for API users
 scripts/                shell/PowerShell smoke tests against a running server
-compose.yaml            GPU deployment of all services (compose.cpu.yaml: NTv3 on CPU)
+compose.yaml            GPU deployment of all services (compose.cpu.yaml: NTv3 + gateway on CPU)
 Makefile                development tasks across the separate projects
 ```
 
