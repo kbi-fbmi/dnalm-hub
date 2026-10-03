@@ -51,7 +51,8 @@ them feel like one project (uv has no task runner of its own).
 
 ```bash
 # deploy (plain Docker Compose)
-cp .env.example .env             # HF_TOKEN, MCP_AUTH_TOKEN
+cp .env.example .env             # HF_TOKEN, MCP_AUTH_TOKEN, optionally MODELS_DIR
+mkdir -p models                  # model weights on the host (default MODELS_DIR=./models)
 docker compose up -d --build     # start / update all services
 docker compose ps                # status;  docker compose logs -f ntv2;  docker compose down
 

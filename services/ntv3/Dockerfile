@@ -6,7 +6,7 @@
 # Build:  docker build -f services/ntv3/Dockerfile -t ntv3-mcp:gpu .   (or: make build S=ntv3)
 # Run:    docker run --rm --gpus all -p 8000:8000 -e HF_TOKEN=hf_xxx \
 #           -e MCP_AUTH_TOKEN=change-me \
-#           -v ntv3-hf-cache:/home/appuser/.cache/huggingface ntv3-mcp:gpu
+#           -v "$PWD/models":/models ntv3-mcp:gpu
 #
 # A CPU-only variant is in Dockerfile.cpu.
 
@@ -51,7 +51,7 @@ RUN if getent passwd 1000 >/dev/null; then \
 # ("Failed to find C compiler"). Disable that and use the stock CUDA kernels.
 ENV PATH="/app/.venv/bin:${PATH}" \
     PYTHONUNBUFFERED=1 \
-    HF_HOME=/home/appuser/.cache/huggingface \
+    HF_HOME=/models \
     MCP_TRANSPORT=http \
     MCP_HOST=0.0.0.0 \
     MCP_PORT=8000 \
@@ -60,11 +60,11 @@ ENV PATH="/app/.venv/bin:${PATH}" \
     NTV3_DTYPE=bfloat16 \
     TORCH_DISABLE_NATIVE_JIT=1
 
-RUN mkdir -p "$HF_HOME" && chown -R appuser:$(id -g appuser) /home/appuser
+RUN mkdir -p "$HF_HOME" && chown -R appuser:$(id -g appuser) /home/appuser "$HF_HOME"
 USER appuser
 
 EXPOSE 8000
-VOLUME ["/home/appuser/.cache/huggingface"]
+VOLUME ["/models"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD ["python3", "-c", "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:' + os.environ.get('MCP_PORT','8000') + '/health', timeout=3)"]

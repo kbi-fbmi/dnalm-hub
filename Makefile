@@ -76,5 +76,5 @@ new-service:
 	cd $(SERVICES_DIR)/$(NAME) && $(UV) lock
 	@echo; echo "Created $(SERVICES_DIR)/$(NAME). Next steps (docs/adding-a-model.md):"
 	@echo "  1. implement the model in $(SERVICES_DIR)/$(NAME)/src/$(NAME)_mcp/"
-	@echo "  2. add a '$(NAME)' block to compose.yaml (new host port, own $(NAME)-hf-cache volume)"
+	@echo "  2. add a '$(NAME)' block to compose.yaml (new host port)"
 	@echo "  3. make build S=$(NAME) && docker compose up -d $(NAME)"

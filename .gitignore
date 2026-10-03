@@ -25,3 +25,5 @@ wheels/
 # Secrets for local docker compose runs (HF_TOKEN, MCP_AUTH_TOKEN, ...)
 .env
 
+# Model weights (MODELS_DIR default, see compose.yaml)
+/models/

@@ -8,6 +8,7 @@ services:
       context: .
       dockerfile: services/ntv3/Dockerfile.cpu
     image: ntv3-mcp:cpu
+    user: "${MODELS_UID:-1000}:${MODELS_GID:-1000}"   # see compose.yaml
     ports:
       - "8000:8000"
     environment:
@@ -20,8 +21,12 @@ services:
       NTV3_DEVICE: cpu
       NTV3_DTYPE: float32
     volumes:
-      # Persist downloaded model weights across container restarts/recreations.
-      - hf-cache:/home/appuser/.cache/huggingface
+      # Model weights on the host, shared with compose.yaml (see the note there).
+      - type: bind
+        source: ${MODELS_DIR:-./models}
+        target: /models
+        bind:
+          create_host_path: false
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
@@ -30,5 +35,3 @@ services:
       retries: 3
       start_period: 30s
 
-volumes:
-  hf-cache:
