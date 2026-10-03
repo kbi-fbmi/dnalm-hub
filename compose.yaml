@@ -6,7 +6,11 @@
 #   docker compose down              stop
 #
 # Secrets come from .env next to this file (see .env.example); every service uses
-# the same MCP_AUTH_TOKEN. To add a model family, copy one of the blocks below.
+# the same MCP_AUTH_TOKEN. To add a model family, copy one of the model blocks below
+# and add it to the gateway's GATEWAY_BACKENDS.
+#
+# The gateway (port 8080) is an OpenAI-compatible /v1/embeddings API over all model
+# services: model "ntv3/100m-pre", "ntv2/500m", ... (see services/gateway).
 #
 # Model weights live on the host in MODELS_DIR (default ./models), shared by all
 # services as their HuggingFace cache. Create it before the first start:  mkdir -p models
@@ -57,3 +61,14 @@ services:
     environment:
       MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:-}
 
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    image: dnalm-gateway:latest
+    restart: unless-stopped
+    ports: ["8080:8080"]
+    environment:
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:-}
+      GATEWAY_BACKENDS: ntv3=http://ntv3:8000,ntv2=http://ntv2:8000
+    depends_on: [ntv3, ntv2]

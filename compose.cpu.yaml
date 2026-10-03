@@ -1,4 +1,4 @@
-# CPU-only variant (NTv3 only), for machines without an NVIDIA GPU. From the repo root:
+# CPU-only variant (NTv3 + the OpenAI-compatible gateway on 8080), for machines without an NVIDIA GPU. From the repo root:
 #   docker compose -f compose.cpu.yaml up -d --build
 name: dnalm-hub-cpu
 
@@ -35,3 +35,14 @@ services:
       retries: 3
       start_period: 30s
 
+  gateway:
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+    image: dnalm-gateway:latest
+    restart: unless-stopped
+    ports: ["8080:8080"]
+    environment:
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:-}
+      GATEWAY_BACKENDS: ntv3=http://ntv3:8000
+    depends_on: [ntv3]
