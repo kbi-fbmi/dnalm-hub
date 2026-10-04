@@ -3,6 +3,7 @@
     POST /v1/embeddings     {"model": "ntv3/100m-pre", "input": "ACGT..." | ["ACGT...", ...]}
     GET  /v1/models         every checkpoint of every service, as "<service>/<checkpoint>"
     GET  /health            unauthenticated liveness check
+    GET  /version           unauthenticated {"name", "version"}
 
 Works with the official OpenAI SDKs (`base_url="http://host:8080/v1"`). Each input is
 one DNA sequence; the vector is the mean-pooled embedding from the service's
@@ -18,6 +19,7 @@ import base64
 import logging
 import os
 import struct
+from importlib.metadata import version
 from typing import Any
 
 from starlette.applications import Starlette
@@ -118,6 +120,9 @@ def create_app(backends: Backends, *, auth_token: str | None = None) -> Starlett
     async def health(request: Request):
         return PlainTextResponse("ok")
 
+    async def version_info(request: Request):
+        return JSONResponse({"name": "dnalm-gateway", "version": version("dnalm-gateway")})
+
     async def list_models(request: Request):
         if not authorized(request):
             return unauthorized()
@@ -188,6 +193,7 @@ def create_app(backends: Backends, *, auth_token: str | None = None) -> Starlett
     return Starlette(
         routes=[
             Route("/health", health, methods=["GET"]),
+            Route("/version", version_info, methods=["GET"]),
             Route("/v1/models", list_models, methods=["GET"]),
             Route("/v1/models/{model:path}", retrieve_model, methods=["GET"]),
             Route("/v1/embeddings", embeddings, methods=["POST"]),
@@ -210,7 +216,7 @@ def app_from_env() -> Starlette:
             "MCP_AUTH_TOKEN is not set: the OpenAI API is UNAUTHENTICATED. Set it, or keep this "
             "behind a reverse proxy / VPN / firewall before exposing it beyond localhost."
         )
-    logger.info("Model services: %s", backends.urls)
+    logger.info("dnalm-gateway %s, model services: %s", version("dnalm-gateway"), backends.urls)
     return create_app(backends, auth_token=auth_token)
 
 

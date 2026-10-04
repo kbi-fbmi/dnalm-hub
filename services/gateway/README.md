@@ -25,6 +25,7 @@ curl http://localhost:8080/v1/embeddings -H "Authorization: Bearer $MCP_AUTH_TOK
 | `GET /v1/models` | every checkpoint of every reachable service |
 | `GET /v1/models/{id}` | one model |
 | `GET /health` | liveness, no auth |
+| `GET /version` | `{"name", "version"}` of the running gateway, no auth |
 
 ## Model ids
 

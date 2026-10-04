@@ -11,6 +11,7 @@ honestly support:
 """
 
 import logging
+from importlib.metadata import version
 
 from dnalm_common import user_errors_as_tool_errors
 from dnalm_common.http_app import build_http_app, register_health_route, run_server
@@ -24,6 +25,7 @@ logger = logging.getLogger("__NAME__-mcp")
 
 mcp = MCPServer(
     "__NAME__-mcp",
+    version=version("__NAME__-mcp"),
     instructions=(
         # TODO: what the model is, what the tools do, context limits, license.
         "Tools for running the __NAME__ genomic language model(s) over raw DNA sequences "

@@ -3,6 +3,7 @@
 import base64
 import struct
 import urllib.error
+from importlib.metadata import version
 from typing import ClassVar
 
 import openai
@@ -227,6 +228,7 @@ def test_embeddings_unreachable_service_is_502():
 def test_auth():
     client = make_client(auth_token="s3cret")
     assert client.get("/health").status_code == 200
+    assert client.get("/version").json()["version"] == version("dnalm-gateway")
     assert client.get("/v1/models").status_code == 401
     assert client.get("/v1/models", headers={"Authorization": "Bearer wrong"}).status_code == 401
     ok = client.get("/v1/models", headers={"Authorization": "Bearer s3cret"})

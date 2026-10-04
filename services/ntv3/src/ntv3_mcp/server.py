@@ -20,6 +20,7 @@ discover valid inputs.
 """
 
 import logging
+from importlib.metadata import version
 
 from dnalm_common import user_errors_as_tool_errors
 from dnalm_common.http_app import build_http_app, register_health_route, run_server
@@ -33,6 +34,7 @@ logger = logging.getLogger("ntv3-mcp")
 
 mcp = MCPServer(
     "ntv3-mcp",
+    version=version("ntv3-mcp"),
     instructions=(
         "Tools for running InstaDeep's Nucleotide Transformer v3 (NTv3) genomic "
         "language models over raw DNA sequences: computing sequence embeddings, "

@@ -13,6 +13,7 @@ No `generate_sequence`: GROVER is a masked (bidirectional) model.
 """
 
 import logging
+from importlib.metadata import version
 
 from dnalm_common import user_errors_as_tool_errors
 from dnalm_common.http_app import build_http_app, register_health_route, run_server
@@ -26,6 +27,7 @@ logger = logging.getLogger("grover-mcp")
 
 mcp = MCPServer(
     "grover-mcp",
+    version=version("grover-mcp"),
     instructions=(
         "Tools for running GROVER (PoetschLab, TU Dresden; Sanabria et al., Nature Machine "
         "Intelligence 2024), a BERT masked DNA language model trained on the human genome, "
