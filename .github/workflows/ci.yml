@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Version is consistent everywhere
+        run: python3 scripts/version.py check
+      - name: Ruff (version pinned in the Makefile)
+        run: make lint
+
+  projects:
+    runs-on: ubuntu-latest
+    outputs:
+      dirs: ${{ steps.list.outputs.dirs }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: list
+        run: |
+          dirs=$(ls -d packages/*/ services/*/ | sed 's:/$::' | grep -v _template | jq -R -s -c 'split("\n")[:-1]')
+          echo "dirs=$dirs" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: projects
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dir: ${{ fromJson(needs.projects.outputs.dirs) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      # Each project has its own environment and lockfile; tests use CPU torch and
+      # never download model weights.
+      - name: pytest ${{ matrix.dir }}
+        working-directory: ${{ matrix.dir }}
+        run: |
+          uv sync --frozen
+          uv run pytest -q -p no:cacheprovider tests
