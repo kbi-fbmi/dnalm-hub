@@ -1,6 +1,6 @@
 [project]
 name = "genalm-mcp"
-version = "0.1.0"
+version = "0.9.0"
 description = "MCP server exposing AIRI Institute's GENA-LM masked DNA language models (BPE tokenizer): DNA embeddings and zero-shot variant scoring."
 requires-python = ">=3.11"
 license = { text = "MIT" }

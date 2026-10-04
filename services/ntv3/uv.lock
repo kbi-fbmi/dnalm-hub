@@ -233,7 +233,7 @@ wheels = [
 
 [[package]]
 name = "dnalm-client"
-version = "0.1.0"
+version = "0.9.0"
 source = { editable = "../../packages/dnalm-client" }
 
 [package.metadata]
@@ -243,7 +243,7 @@ dev = [{ name = "pytest", specifier = ">=8.0" }]
 
 [[package]]
 name = "dnalm-common"
-version = "0.1.0"
+version = "0.9.0"
 source = { editable = "../../packages/dnalm-common" }
 dependencies = [
     { name = "mcp", extra = ["cli"] },
@@ -615,7 +615,7 @@ wheels = [
 
 [[package]]
 name = "ntv3-mcp"
-version = "0.1.0"
+version = "0.9.0"
 source = { editable = "." }
 dependencies = [
     { name = "dnalm-client" },

@@ -246,7 +246,7 @@ wheels = [
 
 [[package]]
 name = "dnalm-common"
-version = "0.1.0"
+version = "0.9.0"
 source = { editable = "../../packages/dnalm-common" }
 dependencies = [
     { name = "mcp", extra = ["cli"] },
@@ -266,7 +266,7 @@ dev = [{ name = "pytest", specifier = ">=8.0" }]
 
 [[package]]
 name = "evo2-mcp"
-version = "0.1.0"
+version = "0.9.0"
 source = { editable = "." }
 dependencies = [
     { name = "dnalm-common" },

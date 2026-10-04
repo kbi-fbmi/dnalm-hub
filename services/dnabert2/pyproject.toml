@@ -1,6 +1,6 @@
 [project]
 name = "dnabert2-mcp"
-version = "0.1.0"
+version = "0.9.0"
 description = "MCP server exposing DNABERT-2 (117M, BPE, ALiBi) genomic language model: DNA embeddings and zero-shot variant scoring."
 requires-python = ">=3.11"
 license = { text = "MIT" }

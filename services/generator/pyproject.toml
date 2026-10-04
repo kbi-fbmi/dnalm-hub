@@ -1,6 +1,6 @@
 [project]
 name = "generator-mcp"
-version = "0.1.0"
+version = "0.9.0"
 description = "MCP server exposing GenerTeam's GENERator causal DNA language models: embeddings, exact-likelihood variant scoring, and sequence generation."
 requires-python = ">=3.11"
 license = { text = "MIT" }

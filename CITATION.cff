@@ -1,0 +1,39 @@
+cff-version: 1.2.0
+message: "If you use dnalm-hub, please cite the paper below (preferred-citation)."
+title: "dnalm-hub: DNA language models behind one MCP and OpenAI-compatible API"
+type: software
+version: "0.9.0"
+date-released: "2026-10-03"
+license: MIT
+repository-code: "https://github.com/kbi-fbmi/dnalm-hub"
+keywords:
+  - genomic foundation models
+  - DNA language models
+  - embeddings
+  - MCP
+authors:
+  - family-names: "Krupička"
+    given-names: "Radim"
+    affiliation: &fbmi "Department of Biomedical Informatics, Faculty of Biomedical Engineering, Czech Technical University in Prague"
+preferred-citation:
+  type: article
+  title: "Benchmarking genomic foundation models for binary classification of gene fusion breakpoints from DNA sequences"
+  journal: "BioData Mining"
+  year: 2026
+  volume: 19
+  issue: 1
+  start: 41
+  issn: "1756-0381"
+  doi: "10.1186/s13040-026-00553-1"
+  authors:
+    - family-names: "Krupička"
+      given-names: "Radim"
+      affiliation: *fbmi
+    - family-names: "Komárková"
+      given-names: "Mariana"
+    - family-names: "Dvorský"
+      given-names: "Bohuslav"
+    - family-names: "Kollinová"
+      given-names: "Kateřina"
+    - family-names: "Klempíř"
+      given-names: "Ondřej"
