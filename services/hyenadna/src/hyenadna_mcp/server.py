@@ -12,6 +12,7 @@ log-likelihood of the whole sequence (`method="whole_sequence_log_prob_delta"`).
 """
 
 import logging
+from importlib.metadata import version
 
 from dnalm_common import user_errors_as_tool_errors
 from dnalm_common.http_app import build_http_app, register_health_route, run_server
@@ -25,6 +26,7 @@ logger = logging.getLogger("hyenadna-mcp")
 
 mcp = MCPServer(
     "hyenadna-mcp",
+    version=version("hyenadna-mcp"),
     instructions=(
         "Tools for running HyenaDNA genomic language models (HazyResearch, pretrained on the "
         "human reference genome hg38) over raw DNA sequences: embeddings, embedding "

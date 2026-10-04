@@ -12,6 +12,7 @@ tokenizer-agnostic whole-sequence method (reported in its `method` field).
 """
 
 import logging
+from importlib.metadata import version
 
 from dnalm_common import user_errors_as_tool_errors
 from dnalm_common.http_app import build_http_app, register_health_route, run_server
@@ -25,6 +26,7 @@ logger = logging.getLogger("dnabert2-mcp")
 
 mcp = MCPServer(
     "dnabert2-mcp",
+    version=version("dnabert2-mcp"),
     instructions=(
         "Tools for running DNABERT-2 (117M, multi-species masked DNA language model) over raw "
         "DNA sequences: sequence embeddings, embedding similarity, and zero-shot "

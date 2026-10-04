@@ -13,6 +13,7 @@ embedding tools and `generate_sequence`, `pooling="last_token"`, and `sampling`
 """
 
 import logging
+from importlib.metadata import version
 
 from dnalm_common import user_errors_as_tool_errors
 from dnalm_common.http_app import build_http_app, register_health_route, run_server
@@ -26,6 +27,7 @@ logger = logging.getLogger("generator-mcp")
 
 mcp = MCPServer(
     "generator-mcp",
+    version=version("generator-mcp"),
     instructions=(
         "Tools for running GenerTeam's GENERator models -- Llama-style causal (autoregressive) DNA "
         "language models -- over raw DNA: embeddings, embedding similarity, zero-shot SNP scoring "

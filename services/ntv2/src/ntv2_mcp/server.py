@@ -12,6 +12,7 @@ method (reported in its `method` field).
 """
 
 import logging
+from importlib.metadata import version
 
 from dnalm_common import user_errors_as_tool_errors
 from dnalm_common.http_app import build_http_app, register_health_route, run_server
@@ -25,6 +26,7 @@ logger = logging.getLogger("ntv2-mcp")
 
 mcp = MCPServer(
     "ntv2-mcp",
+    version=version("ntv2-mcp"),
     instructions=(
         "Tools for running InstaDeep's Nucleotide Transformer v2 (NTv2) genomic language "
         "models over raw DNA sequences: sequence embeddings, embedding similarity, and "

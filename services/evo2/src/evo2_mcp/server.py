@@ -8,6 +8,7 @@ there is no `predict_masked_positions` (no mask token).
 """
 
 import logging
+from importlib.metadata import version
 
 from dnalm_common import user_errors_as_tool_errors
 from dnalm_common.http_app import build_http_app, register_health_route, run_server
@@ -21,6 +22,7 @@ logger = logging.getLogger("evo2-mcp")
 
 mcp = MCPServer(
     "evo2-mcp",
+    version=version("evo2-mcp"),
     instructions=(
         "Tools for running Arc Institute's Evo 2 genomic language model over raw DNA "
         "sequences: embeddings, zero-shot single-nucleotide variant scoring, and sequence "

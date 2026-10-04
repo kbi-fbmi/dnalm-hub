@@ -12,6 +12,7 @@ tokenizer-agnostic whole-sequence method (reported in its `method` field).
 """
 
 import logging
+from importlib.metadata import version
 
 from dnalm_common import user_errors_as_tool_errors
 from dnalm_common.http_app import build_http_app, register_health_route, run_server
@@ -25,6 +26,7 @@ logger = logging.getLogger("genalm-mcp")
 
 mcp = MCPServer(
     "genalm-mcp",
+    version=version("genalm-mcp"),
     instructions=(
         "Tools for running AIRI Institute's GENA-LM genomic language models (BERT and BigBird "
         "masked LMs trained on the T2T human genome, one variant also on multispecies "
