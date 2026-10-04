@@ -1,0 +1,53 @@
+# Changelog
+
+All notable changes to dnalm-hub. The whole repository (shared packages, every
+service and the gateway) shares one version and is released together; versions follow
+[Semantic Versioning](https://semver.org) and this file follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/). How to cut a release:
+[docs/releasing.md](docs/releasing.md).
+
+## [Unreleased]
+
+## [0.9.0] - 2026-10-03
+
+First public release. Close to complete; 1.0.0 follows once the open items below are
+checked.
+
+### Added
+- Model services, all with the same MCP tools (`list_available_checkpoints`,
+  `get_model_info`, `get_embedding_layers`, `embed_sequence`, `compare_sequences`,
+  `score_snp`) and response shapes:
+  - `ntv3` (port 8000): InstaDeep Nucleotide Transformer v3, pre- and post-trained
+    checkpoints, with `predict_masked_positions` and, for post-trained checkpoints,
+    `annotate_sequence`, `predict_tracks`, `list_species`, `list_tracks`.
+  - `ntv2` (8001): Nucleotide Transformer v2 50M-500M and v1 2.5B.
+  - `dnabert2` (8002): DNABERT-2 117M.
+  - `hyenadna` (8003): HyenaDNA tiny-1k to large-1m.
+  - `evo2` (8004): Evo 2 7B via the community PyTorch port `Aquiles-ai/Evo2-7B`.
+  - `generator` (8005): GENERator v1/v2, eukaryote and prokaryote, 1.2B and 3B.
+  - `genalm` (8006): GENA-LM BERT base/large and BigBird.
+  - `grover` (8007): GROVER.
+- `generate_sequence` on the causal models (HyenaDNA, Evo 2, GENERator) with a common
+  response shape.
+- `gateway` (8080): OpenAI-compatible `POST /v1/embeddings` and `GET /v1/models` over all
+  services; non-OpenAI request fields are passed to `embed_sequence`; `GET /version`.
+- Shared packages `dnalm-common` (device/dtype, LRU model cache with idle unload via
+  `DNALM_IDLE_UNLOAD_SECONDS`, validation, SNP scoring, HTTP + bearer auth) and
+  `dnalm-client` (stdlib-only MCP client).
+- One Docker Compose deployment (`compose.yaml`, GPU; `compose.cpu.yaml`, NTv3 + gateway
+  on CPU) with model weights in a shared host directory (`MODELS_DIR`).
+- `make new-service` scaffold, `docs/adding-a-model.md`, `examples/model_overview.ipynb`.
+- Versioning: `scripts/version.py`, `make version` / `check-version` / `bump`,
+  `CITATION.cff`, CI and release workflows.
+
+### Known limitations (to resolve before 1.0.0)
+- Evo 2 runs through a community port, not Arc's `evo2` package; numerical agreement
+  with the official implementation is not verified. Inputs are capped at 32 kb by
+  default (`EVO2_MAX_SEQ_LEN`). The 1B checkpoint is unusable in bf16 and not registered.
+- DNABERT-2 accepts at most 512 tokens (~2.4 kb), so the 10 kbp inputs used in the
+  paper are rejected.
+- GENERator needs inputs whose length is a multiple of 6 unless `remainder` is given.
+- The gateway returns only mean-pooled embeddings.
+
+[Unreleased]: https://github.com/kbi-fbmi/dnalm-hub/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/kbi-fbmi/dnalm-hub/releases/tag/v0.9.0

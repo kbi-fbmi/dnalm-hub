@@ -14,6 +14,9 @@
 #   make lock                      re-lock every project after editing a pyproject.toml
 #   make build [S=ntv2]            build GPU image(s) defined in compose.yaml, without starting them
 #   make new-service NAME=hyenadna scaffold a new model family from services/_template
+#   make version                   print the repo version (one version for everything)
+#   make check-version [TAG=v0.9.0] check every pyproject/uv.lock/CITATION.cff agrees (and matches TAG)
+#   make bump VERSION=0.9.1        set a new version everywhere (then: CHANGELOG.md, commit, tag)
 
 UV ?= uv
 RUFF ?= uvx ruff@0.16.10
@@ -30,7 +33,7 @@ PROJECTS := $(if $(S_GIVEN),$(addprefix $(SERVICES_DIR)/,$(S)),$(addprefix packa
 # project uses its own .venv anyway.
 unexport VIRTUAL_ENV
 
-.PHONY: help list sync lock test lint format build new-service
+.PHONY: help list sync lock test lint format build new-service version check-version bump
 
 help:
 	@sed -n 's/^#   //p' $(MAKEFILE_LIST)
@@ -78,3 +81,13 @@ new-service:
 	@echo "  1. implement the model in $(SERVICES_DIR)/$(NAME)/src/$(NAME)_mcp/"
 	@echo "  2. add a '$(NAME)' block to compose.yaml (new host port) and add it to the gateway's GATEWAY_BACKENDS"
 	@echo "  3. make build S=$(NAME) && docker compose up -d $(NAME)"
+
+version:
+	@python3 scripts/version.py
+
+check-version:
+	@python3 scripts/version.py check $(if $(TAG),--tag $(TAG))
+
+bump:
+	@test -n "$(VERSION)" || { echo "usage: make bump VERSION=0.9.1"; exit 1; }
+	python3 scripts/version.py set $(VERSION)

@@ -1,6 +1,6 @@
 [project]
 name = "evo2-mcp"
-version = "0.1.0"
+version = "0.9.0"
 description = "MCP server exposing Arc Institute's Evo 2 causal DNA language model (community pure-PyTorch transformers port): embeddings, zero-shot variant scoring, and sequence generation."
 readme = "README.md"
 requires-python = ">=3.11"

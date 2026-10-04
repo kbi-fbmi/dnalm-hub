@@ -56,7 +56,7 @@ services/
                         Dockerfile, src/<name>_mcp/{registry,inference,server}.py, tests/
   gateway/              OpenAI-compatible /v1/embeddings that routes to the model services
   _template/            skeleton used by `make new-service`
-docs/                   adding-a-model.md
+docs/                   adding-a-model.md, releasing.md
 examples/               notebook and scripts for API users
 scripts/                shell/PowerShell smoke tests against a running server
 compose.yaml            GPU deployment of all services (compose.cpu.yaml: NTv3 + gateway on CPU)
@@ -84,11 +84,19 @@ make test                        # every package and service (or: make test S=nt
 make lint                        # ruff check + format check (make format fixes; config: ruff.toml)
 make lock                        # after editing a pyproject.toml
 make new-service NAME=hyenadna   # add a model family -> docs/adding-a-model.md
+make version                     # one version for the whole repo; releases -> docs/releasing.md
 ```
 
 `make test` needs a recent [uv](https://docs.astral.sh/uv/) (the lockfiles use the
 current format; uv 0.5 is too old). To use a specific binary, run
 `make test UV=/path/to/uv`.
+
+## Versions
+
+The repository is versioned and released as a whole ([CHANGELOG.md](CHANGELOG.md),
+[releases](https://github.com/kbi-fbmi/dnalm-hub/releases)); `make version` prints the
+current one. Each MCP server reports it as `serverInfo.version`, the gateway at
+`GET /version`.
 
 ## Citation
 
