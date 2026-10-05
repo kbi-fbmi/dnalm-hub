@@ -121,7 +121,7 @@ $embedObj = Parse-SseJson -SseBody $embedResp.Content
 if ($embedObj.result.isError -eq $true) {
     Write-Host "Embedding call returned error:" -ForegroundColor Yellow
     $embedObj.result.content | ForEach-Object { Write-Host $_.text }
-    Write-Host "Tip: nastav platný HF_TOKEN na serveru a zkontroluj přístup ke gated NTv3 repu."
+    Write-Host "Tip: set a valid HF_TOKEN on the server and check access to the gated NTv3 repo."
     exit 3
 }
 
