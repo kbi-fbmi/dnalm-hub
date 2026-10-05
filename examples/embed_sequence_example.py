@@ -1,12 +1,11 @@
-"""Example: send a DNA sequence to ntv3-mcp and print embedding metadata.
+"""Example: embed a DNA sequence with any dnalm-hub service and print a summary.
 
-Usage (from the repo root; uses the ntv3 service's environment for `ntv3_mcp_client`):
-    uv run --project services/ntv3 python examples/embed_sequence_example.py \
-        --server http://kbi-cs2.fbmi.cvut.cz:8000 --sequence ACGTACGTACGT
+Usage (from the repo root):
+    uv run --project packages/dnalm-client python examples/embed_sequence_example.py \
+        --server http://localhost:8001 --sequence ACGTACGTACGT --checkpoint 50m
 
-Optional auth token:
-    set MCP_AUTH_TOKEN=...   (Windows)
-    export MCP_AUTH_TOKEN=... (Linux/macOS)
+Without --checkpoint the service's default model is used. The token is read from
+MCP_AUTH_TOKEN (or pass --token).
 """
 
 from __future__ import annotations
@@ -14,34 +13,28 @@ from __future__ import annotations
 import argparse
 import os
 
-from ntv3_mcp_client import Ntv3McpClient
+from dnalm_client import GenericMcpClient
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Call ntv3-mcp embed_sequence over HTTP MCP.")
+    parser = argparse.ArgumentParser(description="Call embed_sequence on a dnalm-hub service.")
     parser.add_argument(
-        "--server", default="http://kbi-cs2.fbmi.cvut.cz:8000", help="Base server URL"
+        "--server", default="http://localhost:8000", help="service URL, e.g. :8001 for ntv2"
     )
     parser.add_argument("--sequence", default="ACGTACGTACGT", help="DNA sequence (A/C/G/T/N)")
-    parser.add_argument(
-        "--checkpoint", default="100m-pre", help="Checkpoint alias or full HF repo id"
-    )
-    parser.add_argument(
-        "--token", default=os.getenv("MCP_AUTH_TOKEN"), help="Bearer token for /mcp"
-    )
+    parser.add_argument("--checkpoint", help="checkpoint alias or HF repo id (default: server's)")
+    parser.add_argument("--token", default=os.getenv("MCP_AUTH_TOKEN"), help="bearer token")
     args = parser.parse_args()
 
-    with Ntv3McpClient(base_url=args.server, auth_token=args.token) as client:
+    with GenericMcpClient(base_url=args.server, auth_token=args.token) as client:
         print(f"health: {client.health().strip()}")
+        result = client.embed_sequence(args.sequence, checkpoint=args.checkpoint)
 
-        result = client.embed_sequence(sequence=args.sequence, checkpoint=args.checkpoint)
-
-        embedding = result.get("embedding", [])
-        print(f"checkpoint used: {result.get('checkpoint')}")
-        print(f"pooling: {result.get('pooling')}")
-        print(f"embedding length: {len(embedding)}")
-        print(f"embedding preview (first 8): {embedding[:8]}")
-
+    embedding = result["embedding"]
+    print(f"checkpoint: {result['checkpoint']}")
+    print(f"layer: {result['layer_name']} of {result['num_layers']}")
+    print(f"dimension: {len(embedding)}")
+    print(f"first values: {[round(x, 4) for x in embedding[:5]]}")
     return 0
 
 

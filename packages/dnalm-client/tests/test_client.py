@@ -69,3 +69,16 @@ def test_call_passes_kwargs_and_parses_result():
         "name": "annotate_sequence",
         "arguments": {"sequence": "ACGT", "species": "human"},
     }
+
+
+def test_optional_arguments_sent_only_when_given():
+    c = _StubClient([{"result": {"structuredContent": {}}}] * 4)
+    c.embed_sequence("ACGT")
+    c.compare_sequences("ACGT", "ACGA", checkpoint="x", layer_name="6")
+    c.score_snp("ACGT", "T")
+    c.generate_sequence("ACGT")
+    args = [m["params"]["arguments"] for m in c.sent]
+    assert "checkpoint" not in args[0] and "layer_name" not in args[0]  # server defaults
+    assert args[1]["checkpoint"] == "x" and args[1]["layer_name"] == "6"
+    assert "checkpoint" not in args[2]
+    assert "checkpoint" not in args[3] and "top_k" not in args[3]
