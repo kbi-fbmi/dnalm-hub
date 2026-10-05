@@ -89,8 +89,9 @@ docker compose up -d hyenadna
 docker compose logs -f hyenadna
 ```
 
-Then run `examples/model_overview.ipynb` against it. Add the service to `SERVICES`
-in the notebook's first code cell.
+Then run `make smoke S=hyenadna` against it. Add the service's port to `PORTS` in
+`scripts/smoke_test.py` and `examples/tutorial/tutorial_utils.py`, and a row to the
+service tables in `README.md` and `examples/tutorial/01_getting_started.ipynb`.
 
 ## 6. Before you commit
 

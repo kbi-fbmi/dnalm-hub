@@ -8,6 +8,23 @@ service and the gateway) shares one version and is released together; versions f
 
 ## [Unreleased]
 
+### Added
+- Tutorial: six notebooks in `examples/tutorial` (getting started, embeddings with a small
+  classifier, variant effects with a mutation scan, generation, NTv3 annotation and tracks,
+  the OpenAI gateway), replacing `examples/model_overview.ipynb`.
+- `scripts/smoke_test.py` (`make smoke`): checks every running service and the gateway.
+
+### Changed
+- `GenericMcpClient` sends `checkpoint` only when given, so each server's default applies
+  (it used to send NTv3's `100m-pre` to every service).
+- `examples/mcp_client_config.json` configures all services over HTTP;
+  `examples/embed_sequence_example.py` works with any service.
+- README: weight licenses in the service table.
+
+### Removed
+- The NTv3-only smoke-test scripts (`scripts/test_mcp_*`), the `ntv3_mcp_client` package
+  (a thin subclass of `GenericMcpClient`) and `services/ntv3/main.py`.
+
 ## [0.9.0] - 2026-10-03
 
 First public release. Close to complete; 1.0.0 follows once the open items below are

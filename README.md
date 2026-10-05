@@ -10,17 +10,17 @@ Developed at the Department of Biomedical Informatics, Faculty of Biomedical Eng
 Czech Technical University in Prague (Kladno, Czech Republic). If you use it in your
 work, please [cite our paper](#citation).
 
-| Service | Models | Port | Status |
+| Service | Models | Port | Weights license |
 |---|---|---|---|
-| [`services/ntv3`](services/ntv3) | InstaDeep Nucleotide Transformer v3 (1 token per base) | 8000 | running |
-| [`services/ntv2`](services/ntv2) | InstaDeep Nucleotide Transformer v2 + v1 2.5B (6-mer tokens) | 8001 | running |
-| [`services/dnabert2`](services/dnabert2) | DNABERT-2 117M (BPE + ALiBi masked LM, 512 tokens ≈ 2.4 kb) | 8002 | running |
-| [`services/hyenadna`](services/hyenadna) | HyenaDNA tiny-1k ... large-1m (causal, 1 token per base, up to 1M bases) | 8003 | running |
-| [`services/evo2`](services/evo2) | Evo 2 7B (causal StripedHyena 2, 1 token per base, up to 32 kb by default; community PyTorch port, experimental) | 8004 | running |
-| [`services/generator`](services/generator) | GENERator v1/v2 1.2B/3B (causal Llama, 6-mer tokens, ~98 kb) | 8005 | running |
-| [`services/genalm`](services/genalm) | GENA-LM BERT base/large + BigBird (BPE masked LM, 512/4096 tokens) | 8006 | running |
-| [`services/grover`](services/grover) | GROVER (human-genome BERT, BPE, 512 tokens ≈ 1.9 kb) | 8007 | running |
-| [`services/gateway`](services/gateway) | OpenAI-compatible `/v1/embeddings` over all of the above | 8080 | running |
+| [`services/ntv3`](services/ntv3) | InstaDeep Nucleotide Transformer v3 (1 token per base) | 8000 | non-commercial, gated |
+| [`services/ntv2`](services/ntv2) | InstaDeep Nucleotide Transformer v2 + v1 2.5B (6-mer tokens) | 8001 | non-commercial |
+| [`services/dnabert2`](services/dnabert2) | DNABERT-2 117M (BPE + ALiBi masked LM, 512 tokens ≈ 2.4 kb) | 8002 | Apache-2.0 |
+| [`services/hyenadna`](services/hyenadna) | HyenaDNA tiny-1k ... large-1m (causal, 1 token per base, up to 1M bases) | 8003 | BSD-3-Clause |
+| [`services/evo2`](services/evo2) | Evo 2 7B (causal StripedHyena 2, 1 token per base, up to 32 kb by default; community PyTorch port, experimental) | 8004 | Apache-2.0 |
+| [`services/generator`](services/generator) | GENERator v1/v2 1.2B/3B (causal Llama, 6-mer tokens, ~98 kb) | 8005 | MIT |
+| [`services/genalm`](services/genalm) | GENA-LM BERT base/large + BigBird (BPE masked LM, 512/4096 tokens) | 8006 | not stated (code MIT) |
+| [`services/grover`](services/grover) | GROVER (human-genome BERT, BPE, 512 tokens ≈ 1.9 kb) | 8007 | CC-BY-4.0 |
+| [`services/gateway`](services/gateway) | OpenAI-compatible `/v1/embeddings` over all of the above | 8080 | MIT (code) |
 
 Tools available on every service: `list_available_checkpoints`, `get_model_info`,
 `get_embedding_layers`, `embed_sequence` (one sequence or a batch), `compare_sequences`
@@ -34,9 +34,11 @@ embeddings API, e.g. `OpenAI(base_url="http://localhost:8080/v1", api_key=MCP_AU
 .embeddings.create(model="ntv3/100m-pre", input=["ACGT..."])`. See
 [services/gateway](services/gateway).
 
-**Try it:** [examples/model_overview.ipynb](examples/model_overview.ipynb) asks each
-service for its models, picks one per type, and tests embeddings (single, batch and
-per-token), similarity and SNP scoring.
+Check each model's license before commercial use; the service READMEs give details.
+
+**Tutorial:** [examples/tutorial](examples/tutorial) is a series of six notebooks: getting
+started, embeddings (with a small classifier), variant effects, generation, NTv3 genome
+annotation and the OpenAI gateway.
 
 **GPU sharing:** all services share one GPU. Each loads a checkpoint on first use and
 frees it after `DNALM_IDLE_UNLOAD_SECONDS` without requests (default 900 in compose.yaml;
@@ -57,8 +59,8 @@ services/
   gateway/              OpenAI-compatible /v1/embeddings that routes to the model services
   _template/            skeleton used by `make new-service`
 docs/                   adding-a-model.md, releasing.md
-examples/               notebook and scripts for API users
-scripts/                shell/PowerShell smoke tests against a running server
+examples/               tutorial notebooks, a CLI example, an MCP client config
+scripts/                smoke_test.py (make smoke) and version.py (make version)
 compose.yaml            GPU deployment of all services (compose.cpu.yaml: NTv3 + gateway on CPU)
 Makefile                development tasks across the separate projects
 ```
