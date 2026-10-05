@@ -209,9 +209,9 @@ class GenericMcpClient:
         checkpoints = structured.get("result", [])
         return checkpoints if isinstance(checkpoints, list) else []
 
-    def get_model_info(self, checkpoint: str = "100m-pre") -> dict[str, Any]:
+    def get_model_info(self, checkpoint: str | None = None) -> dict[str, Any]:
         """Load a checkpoint and report architecture details (hidden size, layers, device, ...)."""
-        return self._call_structured("get_model_info", {"checkpoint": checkpoint})
+        return self._call_structured("get_model_info", _with_checkpoint({}, checkpoint))
 
     def get_embedding_layers(self, checkpoint: str, which: str = "recommended") -> dict[str, Any]:
         """List valid hidden-state layer indices for `embed_sequence`."""
@@ -222,7 +222,7 @@ class GenericMcpClient:
     def embed_sequence(
         self,
         sequence: str | list[str],
-        checkpoint: str = "100m-pre",
+        checkpoint: str | None = None,
         layer_name: str | None = None,
         pooling: str = "mean",
         species: str | None = None,
@@ -237,18 +237,19 @@ class GenericMcpClient:
         """
         arguments: dict[str, Any] = {
             "sequence": sequence,
-            "checkpoint": checkpoint,
             "pooling": pooling,
         }
         if layer_name is not None:
             arguments["layer_name"] = layer_name
-        return self._call_structured("embed_sequence", _with_species(arguments, species))
+        return self._call_structured(
+            "embed_sequence", _with_species(_with_checkpoint(arguments, checkpoint), species)
+        )
 
     def score_snp(
         self,
         sequence: str,
         alternative_allele: str,
-        checkpoint: str = "100m-pre",
+        checkpoint: str | None = None,
         position: int | None = None,
         species: str | None = None,
     ) -> dict[str, Any]:
@@ -261,17 +262,18 @@ class GenericMcpClient:
         arguments: dict[str, Any] = {
             "sequence": sequence,
             "alternative_allele": alternative_allele,
-            "checkpoint": checkpoint,
         }
         if position is not None:
             arguments["position"] = position
-        return self._call_structured("score_snp", _with_species(arguments, species))
+        return self._call_structured(
+            "score_snp", _with_species(_with_checkpoint(arguments, checkpoint), species)
+        )
 
     def predict_masked_positions(
         self,
         sequence: str,
         positions: list[int] | None = None,
-        checkpoint: str = "100m-pre",
+        checkpoint: str | None = None,
         top_k: int = 4,
         species: str | None = None,
     ) -> dict[str, Any]:
@@ -284,16 +286,18 @@ class GenericMcpClient:
         arguments = {
             "sequence": sequence,
             "positions": positions or [],
-            "checkpoint": checkpoint,
             "top_k": top_k,
         }
-        return self._call_structured("predict_masked_positions", _with_species(arguments, species))
+        return self._call_structured(
+            "predict_masked_positions",
+            _with_species(_with_checkpoint(arguments, checkpoint), species),
+        )
 
     def compare_sequences(
         self,
         sequence_a: str,
         sequence_b: str,
-        checkpoint: str = "100m-pre",
+        checkpoint: str | None = None,
         layer_name: str | None = None,
         species: str | None = None,
     ) -> dict[str, Any]:
@@ -304,11 +308,12 @@ class GenericMcpClient:
         arguments: dict[str, Any] = {
             "sequence_a": sequence_a,
             "sequence_b": sequence_b,
-            "checkpoint": checkpoint,
         }
         if layer_name is not None:
             arguments["layer_name"] = layer_name
-        return self._call_structured("compare_sequences", _with_species(arguments, species))
+        return self._call_structured(
+            "compare_sequences", _with_species(_with_checkpoint(arguments, checkpoint), species)
+        )
 
     def generate_sequence(
         self,
@@ -329,8 +334,7 @@ class GenericMcpClient:
             "max_new_tokens": max_new_tokens,
             "temperature": temperature,
         }
-        if checkpoint is not None:
-            arguments["checkpoint"] = checkpoint
+        _with_checkpoint(arguments, checkpoint)
         if top_k is not None:
             arguments["top_k"] = top_k
         return self._call_structured("generate_sequence", arguments)
@@ -389,4 +393,11 @@ def _with_species(arguments: dict[str, Any], species: str | None) -> dict[str, A
     """Add `species` only when given, so servers without that parameter keep working."""
     if species is not None:
         arguments["species"] = species
+    return arguments
+
+
+def _with_checkpoint(arguments: dict[str, Any], checkpoint: str | None) -> dict[str, Any]:
+    """Add `checkpoint` only when given, so each server uses its own default model."""
+    if checkpoint is not None:
+        arguments["checkpoint"] = checkpoint
     return arguments

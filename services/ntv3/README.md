@@ -93,7 +93,7 @@ uv run mcp dev src/ntv3_mcp/server.py
 
 Add an entry to your client's MCP server config (Claude Desktop's
 `claude_desktop_config.json`, Claude Code's `.mcp.json`, Cursor's `mcp.json`, etc.).
-See [examples/mcp_client_config.json](examples/mcp_client_config.json):
+For a local (stdio) server:
 
 ```json
 {
@@ -106,18 +106,8 @@ See [examples/mcp_client_config.json](examples/mcp_client_config.json):
 }
 ```
 
-Or, once published to PyPI, via `uvx` without a local checkout:
-
-```json
-{
-  "mcpServers": {
-    "ntv3": {
-      "command": "uvx",
-      "args": ["--from", "ntv3-mcp", "ntv3-mcp"]
-    }
-  }
-}
-```
+For the HTTP deployment (all services), see
+[examples/mcp_client_config.json](../../examples/mcp_client_config.json).
 
 ## Deploying with Docker
 
@@ -326,7 +316,6 @@ src/ntv3_mcp/
   inference.py    # tokenizer/model loading (cached), embeddings, variant scoring,
                   # masked prediction -- all torch/transformers logic lives here
   server.py       # MCPServer app + tool wrappers + stdio/HTTP transport + auth
-src/ntv3_mcp_client/  # thin Python client (Ntv3McpClient) on top of dnalm-client
 Dockerfile        # GPU deployment image (see "Deploying with Docker")
 Dockerfile.cpu    # CPU-only image
 ```

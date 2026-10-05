@@ -1,13 +1,13 @@
 {
-  "_comment": "Generic MCP client config (Claude Desktop, Claude Code, Cursor, Cline, ...). Merge the 'ntv3' entry into that client's mcpServers config. Adjust the command if you installed the package differently.",
+  "_comment": "MCP client config for a running dnalm-hub (docker compose up -d). Claude Code: save as .mcp.json (it expands ${MCP_AUTH_TOKEN} from the environment). Other clients use the same url/headers entries; clients that only speak stdio (e.g. Claude Desktop) need a bridge such as `npx mcp-remote <url> --header 'Authorization: Bearer <token>'`. Replace localhost with your server, and drop the services you don't run.",
   "mcpServers": {
-    "ntv3": {
-      "command": "uvx",
-      "args": ["--from", "ntv3-mcp", "ntv3-mcp"],
-      "env": {
-        "NTV3_DEVICE": "cpu",
-        "NTV3_DTYPE": "float32"
-      }
-    }
+    "dnalm-ntv3": {"type": "http", "url": "http://localhost:8000/mcp", "headers": {"Authorization": "Bearer ${MCP_AUTH_TOKEN}"}},
+    "dnalm-ntv2": {"type": "http", "url": "http://localhost:8001/mcp", "headers": {"Authorization": "Bearer ${MCP_AUTH_TOKEN}"}},
+    "dnalm-dnabert2": {"type": "http", "url": "http://localhost:8002/mcp", "headers": {"Authorization": "Bearer ${MCP_AUTH_TOKEN}"}},
+    "dnalm-hyenadna": {"type": "http", "url": "http://localhost:8003/mcp", "headers": {"Authorization": "Bearer ${MCP_AUTH_TOKEN}"}},
+    "dnalm-evo2": {"type": "http", "url": "http://localhost:8004/mcp", "headers": {"Authorization": "Bearer ${MCP_AUTH_TOKEN}"}},
+    "dnalm-generator": {"type": "http", "url": "http://localhost:8005/mcp", "headers": {"Authorization": "Bearer ${MCP_AUTH_TOKEN}"}},
+    "dnalm-genalm": {"type": "http", "url": "http://localhost:8006/mcp", "headers": {"Authorization": "Bearer ${MCP_AUTH_TOKEN}"}},
+    "dnalm-grover": {"type": "http", "url": "http://localhost:8007/mcp", "headers": {"Authorization": "Bearer ${MCP_AUTH_TOKEN}"}}
   }
 }

@@ -14,6 +14,7 @@
 #   make lock                      re-lock every project after editing a pyproject.toml
 #   make build [S=ntv2]            build GPU image(s) defined in compose.yaml, without starting them
 #   make new-service NAME=hyenadna scaffold a new model family from services/_template
+#   make smoke [S=ntv2]            smoke-test a running stack (all services + gateway; MCP_HOST, MCP_AUTH_TOKEN)
 #   make version                   print the repo version (one version for everything)
 #   make check-version [TAG=v0.9.0] check every pyproject/uv.lock/CITATION.cff agrees (and matches TAG)
 #   make bump VERSION=0.9.1        set a new version everywhere (then: CHANGELOG.md, commit, tag)
@@ -33,7 +34,7 @@ PROJECTS := $(if $(S_GIVEN),$(addprefix $(SERVICES_DIR)/,$(S)),$(addprefix packa
 # project uses its own .venv anyway.
 unexport VIRTUAL_ENV
 
-.PHONY: help list sync lock test lint format build new-service version check-version bump
+.PHONY: help list sync lock test lint format build new-service smoke version check-version bump
 
 help:
 	@sed -n 's/^#   //p' $(MAKEFILE_LIST)
@@ -91,3 +92,7 @@ check-version:
 bump:
 	@test -n "$(VERSION)" || { echo "usage: make bump VERSION=0.9.1"; exit 1; }
 	python3 scripts/version.py set $(VERSION)
+
+# Against a running deployment (docker compose up -d); reads MCP_HOST / MCP_AUTH_TOKEN.
+smoke:
+	cd packages/dnalm-client && $(UV) run python ../../scripts/smoke_test.py $(if $(S_GIVEN),$(S))
