@@ -23,6 +23,7 @@ name: dnalm-hub
 x-env: &env
   MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN:-}
   DNALM_IDLE_UNLOAD_SECONDS: ${DNALM_IDLE_UNLOAD_SECONDS:-900}
+  DNALM_CUDA_CACHE_LIMIT_MB: ${DNALM_CUDA_CACHE_LIMIT_MB:-1024}
 
 x-service: &service
   gpus: all
