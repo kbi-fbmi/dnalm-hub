@@ -1,5 +1,6 @@
 """Shared internals for the genomic MCP server family. See README.md."""
 
+from .concurrency import one_call_at_a_time
 from .device import select_device, select_dtype
 from .errors import user_errors_as_tool_errors
 from .model_cache import LRUModelCache
@@ -20,6 +21,7 @@ __all__ = [
     "assert_single_nucleotide_tokenizer",
     "is_single_nucleotide_tokenizer",
     "masked_lm_pseudo_log_likelihood",
+    "one_call_at_a_time",
     "score_snp_whole_sequence",
     "select_device",
     "select_dtype",

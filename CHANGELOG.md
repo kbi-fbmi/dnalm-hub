@@ -14,6 +14,18 @@ service and the gateway) shares one version and is released together; versions f
   the OpenAI gateway), replacing `examples/model_overview.ipynb`.
 - `scripts/smoke_test.py` (`make smoke`): checks every running service and the gateway.
 
+### Fixed
+- Concurrent requests to one service could fail or hang: the model code isn't
+  thread-safe (e.g. NTv2's rotary cache), and MCP runs tools in worker threads. Tools
+  that run a model now execute one at a time per service (`one_call_at_a_time`).
+- `GenericMcpClient` reused one JSON-RPC id for every request, so two threads sharing a
+  client could get each other's response, or wait forever. Each request now gets its own
+  id, and session creation is locked.
+- Services shared the GPU poorly: PyTorch kept freed memory cached, so after one long batch
+  a larger model (Evo 2) could no longer load. After each call, cached memory above
+  `DNALM_CUDA_CACHE_LIMIT_MB` (default 1024) is now released, and running out of GPU
+  memory returns a readable error instead of "Error executing tool".
+
 ### Changed
 - `GenericMcpClient` sends `checkpoint` only when given, so each server's default applies
   (it used to send NTv3's `100m-pre` to every service).

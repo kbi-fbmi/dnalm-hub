@@ -6,12 +6,15 @@ used in small scripts and tests without adding a requests/httpx dependency.
 A single client reuses one MCP session across calls (created lazily on first
 use, and transparently re-created if the server reports it expired), so
 calling several tools back to back only pays the initialize/notify round
-trip once.
+trip once. A client may be shared between threads: every request gets its own
+JSON-RPC id, so concurrent responses on one session can't be mixed up.
 """
 
 from __future__ import annotations
 
+import itertools
 import json
+import threading
 import urllib.error
 import urllib.request
 from typing import Any, Self
@@ -39,6 +42,9 @@ class GenericMcpClient:
         self.auth_token = auth_token
         self.timeout = timeout
         self._session_id: str | None = None
+        self._session_lock = threading.Lock()
+        self._ids = itertools.count(1)
+        self._id_lock = threading.Lock()
 
     def __enter__(self) -> Self:
         return self
@@ -86,7 +92,7 @@ class GenericMcpClient:
         """
         payload = {
             "jsonrpc": "2.0",
-            "id": "init-1",
+            "id": self._next_id(),
             "method": "initialize",
             "params": {
                 "protocolVersion": protocol_version,
@@ -115,13 +121,19 @@ class GenericMcpClient:
         with urllib.request.urlopen(req, timeout=self.timeout):
             pass
 
+    def _next_id(self) -> int:
+        """A JSON-RPC id unique within this client."""
+        with self._id_lock:
+            return next(self._ids)
+
     def _ensure_session(self) -> str:
-        """Return the cached session id, creating one on first use."""
-        if self._session_id is None:
-            session_id = self.initialize_mcp()
-            self.notify_initialized(session_id)
-            self._session_id = session_id
-        return self._session_id
+        """Return the cached session id, creating one on first use (once, even across threads)."""
+        with self._session_lock:
+            if self._session_id is None:
+                session_id = self.initialize_mcp()
+                self.notify_initialized(session_id)
+                self._session_id = session_id
+            return self._session_id
 
     def call_tool(self, name: str, arguments: dict[str, Any] | None = None) -> dict[str, Any]:
         """Call one MCP tool and return the JSON-RPC result payload.
@@ -134,7 +146,7 @@ class GenericMcpClient:
         """
         payload = {
             "jsonrpc": "2.0",
-            "id": "tool-1",
+            "id": self._next_id(),
             "method": "tools/call",
             "params": {"name": name, "arguments": arguments or {}},
         }
@@ -162,7 +174,7 @@ class GenericMcpClient:
         Tool sets differ per model family (e.g. only NTv3 has
         `predict_masked_positions`), so check this before calling a tool.
         """
-        payload = {"jsonrpc": "2.0", "id": "tools-1", "method": "tools/list", "params": {}}
+        payload = {"jsonrpc": "2.0", "id": self._next_id(), "method": "tools/list", "params": {}}
         message, _ = self._post_mcp_sse_json("/mcp", payload, session_id=self._ensure_session())
         tools = message.get("result", {}).get("tools", [])
         return tools if isinstance(tools, list) else []

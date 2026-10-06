@@ -14,7 +14,7 @@ log-likelihood of the whole sequence (`method="whole_sequence_log_prob_delta"`).
 import logging
 from importlib.metadata import version
 
-from dnalm_common import user_errors_as_tool_errors
+from dnalm_common import one_call_at_a_time, user_errors_as_tool_errors
 from dnalm_common.http_app import build_http_app, register_health_route, run_server
 from mcp.server.mcpserver import MCPServer
 
@@ -68,6 +68,7 @@ def list_available_checkpoints() -> list[dict]:
 
 @mcp.tool()
 @user_errors_as_tool_errors
+@one_call_at_a_time
 def get_model_info(checkpoint: str = DEFAULT_MODEL_ALIAS) -> dict:
     """Load a HyenaDNA checkpoint and report its architecture details.
 
@@ -81,6 +82,7 @@ def get_model_info(checkpoint: str = DEFAULT_MODEL_ALIAS) -> dict:
 
 @mcp.tool()
 @user_errors_as_tool_errors
+@one_call_at_a_time
 def get_embedding_layers(checkpoint: str = DEFAULT_MODEL_ALIAS, which: str = "recommended") -> dict:
     """List hidden-state layer indices usable as `layer_name` in embed_sequence.
 
@@ -94,6 +96,7 @@ def get_embedding_layers(checkpoint: str = DEFAULT_MODEL_ALIAS, which: str = "re
 
 @mcp.tool()
 @user_errors_as_tool_errors
+@one_call_at_a_time
 def embed_sequence(
     sequence: str | list[str],
     checkpoint: str = DEFAULT_MODEL_ALIAS,
@@ -134,6 +137,7 @@ def embed_sequence(
 
 @mcp.tool()
 @user_errors_as_tool_errors
+@one_call_at_a_time
 def score_snp(
     sequence: str,
     alternative_allele: str,
@@ -159,6 +163,7 @@ def score_snp(
 
 @mcp.tool()
 @user_errors_as_tool_errors
+@one_call_at_a_time
 def compare_sequences(
     sequence_a: str,
     sequence_b: str,
@@ -173,6 +178,7 @@ def compare_sequences(
 
 @mcp.tool()
 @user_errors_as_tool_errors
+@one_call_at_a_time
 def generate_sequence(
     prompt: str,
     checkpoint: str = DEFAULT_MODEL_ALIAS,

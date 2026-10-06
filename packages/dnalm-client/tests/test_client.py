@@ -82,3 +82,13 @@ def test_optional_arguments_sent_only_when_given():
     assert args[1]["checkpoint"] == "x" and args[1]["layer_name"] == "6"
     assert "checkpoint" not in args[2]
     assert "checkpoint" not in args[3] and "top_k" not in args[3]
+
+
+def test_request_ids_are_unique_across_threads():
+    from concurrent.futures import ThreadPoolExecutor
+
+    c = _StubClient([{"result": {"structuredContent": {}}}] * 64)
+    with ThreadPoolExecutor(8) as pool:
+        list(pool.map(lambda _: c.embed_sequence("ACGT"), range(64)))
+    ids = [m["id"] for m in c.sent]
+    assert len(set(ids)) == 64  # a shared session must not see two requests with one id
