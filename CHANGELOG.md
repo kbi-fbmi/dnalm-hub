@@ -13,6 +13,8 @@ service and the gateway) shares one version and is released together; versions f
   classifier, variant effects with a mutation scan, generation, NTv3 annotation and tracks,
   the OpenAI gateway), replacing `examples/model_overview.ipynb`.
 - `scripts/smoke_test.py` (`make smoke`): checks every running service and the gateway.
+- `scripts/benchmark.py` (`make benchmark`) and `docs/performance.md`: embedding throughput
+  of one-by-one, concurrent and batched requests.
 
 ### Fixed
 - Concurrent requests to one service could fail or hang: the model code isn't
