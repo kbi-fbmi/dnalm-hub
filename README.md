@@ -58,7 +58,7 @@ services/
                         Dockerfile, src/<name>_mcp/{registry,inference,server}.py, tests/
   gateway/              OpenAI-compatible /v1/embeddings that routes to the model services
   _template/            skeleton used by `make new-service`
-docs/                   adding-a-model.md, releasing.md
+docs/                   adding-a-model.md, releasing.md, performance.md
 examples/               tutorial notebooks, a CLI example, an MCP client config
 scripts/                smoke_test.py (make smoke) and version.py (make version)
 compose.yaml            GPU deployment of all services (compose.cpu.yaml: NTv3 + gateway on CPU)
